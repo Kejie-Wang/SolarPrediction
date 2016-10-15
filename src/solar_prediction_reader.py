@@ -122,9 +122,8 @@ class Reader:
         return [solar_data_batch, temp_data_batch, target_data_batch]
 
     def get_test_set(self, test_num):
-        test_set = []
-        for i in range(test_num):
-            test_targets = []
+        test_targets = []
+        for i in range(test_num):  
             for j in range(self.n_model):
                 test_targets.append(self.target_data[self.test_target_start+i*self.data_step+j+10 : 
                                                     self.test_target_start+i*self.data_step+j+11])
