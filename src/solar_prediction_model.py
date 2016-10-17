@@ -22,8 +22,9 @@ class Config:
     data_length = 14400 #600 days
     data_step = 24  #the step in generating the trian set if 1, most overlap; if n_step, no overlap
     train_prop = 0.8
-    epoch_size = 100
-    print_step = 100    
+    epoch_size = 300000
+    print_step = 100
+    test_step = 1000
 
     n_hidden_solar = 120
     n_hidden_temp = 120
@@ -86,7 +87,7 @@ class SolarPredictionModel:
     def optimize(self):
     	print "optimize"
         if self._optimize is None:
-            optimizer = tf.train.AdamOptimizer(0.005)
+            optimizer = tf.train.AdamOptimizer(0.000001)
             self._optimize = optimizer.minimize(self.loss)
         return self._optimize
 
@@ -140,18 +141,28 @@ def main(_):
     with tf.Session() as sess:
         tf.initialize_all_variables().run()
 
-        #save_path = saver.restore(sess, config.model_path)
-
+        save_path = saver.restore(sess, config.model_path)
+        
         #train
-        for i in range(epoch_size):
+        for i in range(epoch_size+1):
             batch = reader.next_batch()
             for j in range(n_model):
-                sess.run(optimizes[j], feed_dict={x_solar[j]:batch[0], x_temp[j]:batch[1], y_[j]:batch[2][j]})
                 if i%print_step == 0:
                     l = sess.run(losses[j], feed_dict={x_solar[j]:batch[0], x_temp[j]:batch[1], y_[j]:batch[2][j]})
                     print "training loss:", l
+                if i%config.test_step == 0:
+                    test_results = []
+                    solar_test_input, temp_test_input, test_targets = reader.get_test_set(10)
+                    for k in range(n_model):
+                        test_result = sess.run(predictions[k], feed_dict={x_solar[k]:solar_test_input, x_temp[k]:temp_test_input})
+                        test_results.append(test_result)
 
+                    print test_targets, test_results
+
+                    
+                sess.run(optimizes[j], feed_dict={x_solar[j]:batch[0], x_temp[j]:batch[1], y_[j]:batch[2][j]})
         save_path = saver.save(sess, config.model_path)
+        
 
         #test
         test_results = []

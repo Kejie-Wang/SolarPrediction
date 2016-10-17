@@ -10,5 +10,5 @@ reader = solar_prediction_reader.Reader(config.data_path, config)
 
 
 #get_test function test
-for i in range(5):
-	print reader.get_test_set(2)[2]
+for i in range(1):
+	print reader.get_test_set(2)
