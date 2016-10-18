@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 
-
-
 import tensorflow as tf
 import solar_prediction_reader
 import matplotlib.pyplot as plt
@@ -9,36 +7,38 @@ import matplotlib.pyplot as plt
 class Config:
 
     data_path = "solar_data.pkl"    
-    input_group_solar = ['Avg Global CMP22 (vent/cor) [W/m^2]', 'Avg Direct CHP1-1 [W/m^2]', 'Avg Diffuse 8-48 (vent) [W/m^2]']
+    #input_group_solar = ['Avg Global CMP22 (vent/cor) [W/m^2]', 'Avg Direct CHP1-1 [W/m^2]', 'Avg Diffuse 8-48 (vent) [W/m^2]']
     input_group_temp = ['Avg Zenith Angle [degrees]','Avg Azimuth Angle [degrees]','Avg Airmass','Avg Tower Dry Bulb Temp [deg C]', 
                             'Avg Deck Dry Bulb Temp [deg C]', 'Avg Tower Wet Bulb Temp [deg C]', 'Avg Tower Dew Point Temp [deg C]',
                             'Avg Total Cloud Cover [%]','Avg Opaque Cloud Cover [%]', 'Avg Precipitation [mm]']
     target_group = ['Avg Global CMP22 (vent/cor) [W/m^2]']
 
+    input_group_solar = ['Avg Total Cloud Cover [%]','Avg Tower Dry Bulb Temp [deg C]','Avg Direct CHP1-1 [W/m^2]']
+
     group = []
 
-    batch_size = 5
+    batch_size = 150
     n_step = 120
     n_predict = 1
 
     data_length = 14400 #600 days
     data_step = 60  #the step in generating the trian set if 1, most overlap; if n_step, no overlap
     train_prop = 0.8
-    epoch_size = 300
+    epoch_size = 500
     print_step = 50
-    test_step = 1000
+    test_step = 100
 
     n_hidden_solar = 64
     n_hidden_temp = 64
     n_hidden_level2 = 256
 
-    n_model = 1
+    n_model = 24
 
     model_path = "model.ckpt"
 
 
 class SolarPredictionModel:
-    def __init__(self, data, target, config):
+    def __init__(self, data, target, config, n_model):
         self._prediction = None
         self.n_hidden_solar = config.n_hidden_solar
         self.n_hidden_temp = config.n_hidden_temp
@@ -50,6 +50,8 @@ class SolarPredictionModel:
         self._prediction = None
         self._optimize = None
         self._loss = None
+
+        self.n_model = n_model
 
 
     @property
@@ -75,7 +77,7 @@ class SolarPredictionModel:
             #     cell_level2 = tf.nn.rnn_cell.LSTMCell(self.n_hidden_level2, state_is_tuple=True)
             #     outputs, state_level2 = tf.nn.dynamic_rnn(cell_level2, data_level2, dtype=tf.float32)
 
-            with tf.variable_scope("solar_test"):
+            with tf.variable_scope("solar_test"+str(self.n_model)):
                 cell_level2 = tf.nn.rnn_cell.LSTMCell(self.n_hidden_level2, state_is_tuple=True)
                 outputs, state_level2 = tf.nn.dynamic_rnn(cell_level2, self.solar_data, dtype=tf.float32)
 
@@ -98,16 +100,16 @@ class SolarPredictionModel:
 
     @property
     def optimize(self):
-    	print "optimize"
+    	# print "optimize"
         if self._optimize is None:
-            optimizer = tf.train.AdamOptimizer(0.005)
+            optimizer = tf.train.AdamOptimizer(0.0001)
             self._optimize = optimizer.minimize(self.loss)
         return self._optimize
 
 
     @property
     def loss(self):
-    	print "loss"
+    	# print "loss"
         if self._loss is None:
             self._loss = tf.reduce_mean(tf.square(self.prediction-self.target))
         return self._loss
@@ -135,7 +137,7 @@ def main(_):
     reader = solar_prediction_reader.Reader(config.data_path, config)
     models = []
     for i in range(n_model):
-        models.append(SolarPredictionModel([x_solar[i], x_temp[i]], y_[i], config))
+        models.append(SolarPredictionModel([x_solar[i], x_temp[i]], y_[i], config, i))
 
     predictions = []
     losses = []
@@ -144,17 +146,14 @@ def main(_):
         predictions.append(models[i].prediction)
         losses.append(models[i].loss)
         optimizes.append(models[i].optimize)
-    # model = SolarPredictionModel([x_solar, x_temp], y_, config)
-    # prediction = model.prediction
-    # loss = model.loss
-    # optimize = model.optimize
 
+    #new a saver to save the model
     saver = tf.train.Saver()
 
     with tf.Session() as sess:
         tf.initialize_all_variables().run()
 
-        save_path = saver.restore(sess, config.model_path)
+        # save_path = saver.restore(sess, config.model_path)
         
         #train
         for i in range(epoch_size+1):
@@ -162,38 +161,58 @@ def main(_):
             for j in range(n_model):
                 if i%print_step == 0:
                     l = sess.run(losses[j], feed_dict={x_solar[j]:batch[0], x_temp[j]:batch[1], y_[j]:batch[2][j]})
-                    print "training loss:", l
-                if i%config.test_step == 0:
-                    test_results = []
-                    solar_test_input, temp_test_input, test_targets = reader.get_test_set(10)
-                    for k in range(n_model):
-                        test_result = sess.run(predictions[k], feed_dict={x_solar[k]:solar_test_input, x_temp[k]:temp_test_input})
-                        test_results.append(test_result)
+                    print "model", j, "training loss:", l
 
-                    print "-"*30, "test target", "-"*30
-                    for i in range(len(test_targets)):
-                        print test_targets[i], test_results[0][i]
-                    #print test_targets, test_results
+                sess.run(optimizes[j], feed_dict={x_solar[j]:batch[0], x_temp[j]:batch[1], y_[j]:batch[2][j]})
+
+            if i%config.test_step == 0:
+                test_results = []
+                solar_test_input, temp_test_input, test_targets = reader.get_test_set(1)
+                for k in range(n_model):
+                    test_result = sess.run(predictions[k], feed_dict={x_solar[k]:solar_test_input, x_temp[k]:temp_test_input})
+                    test_results.append(test_result)
+
+                #first test result
+                test_target_0 = test_targets[0]
+                test_result_0 = zip(*test_results)[0]
+
+                print "-"*5, "test target", "-"*5, "test results", "-"*5
+                for i in range(len(test_target_0)):
+                    print test_target_0[i], test_result_0[i]
+                
+                plt.figure(0)
+                plt.plot(test_target_0, color='blue')
+                plt.hold
+                plt.plot(test_result_0, color='red')
+                plt.title("Test Results")
+                plt.show()
 
                     
-                sess.run(optimizes[j], feed_dict={x_solar[j]:batch[0], x_temp[j]:batch[1], y_[j]:batch[2][j]})
+        
+
         save_path = saver.save(sess, config.model_path)
         
 
         #test
         test_results = []
-        solar_test_input, temp_test_input, test_targets = reader.get_test_set(10)
+        solar_test_input, temp_test_input, test_targets = reader.get_test_set(30)
         for i in range(n_model):
             test_result = sess.run(predictions[i], feed_dict={x_solar[i]:solar_test_input, x_temp[i]:temp_test_input})
             test_results.append(test_result)
 
-        print test_targets, test_results
-        # plt.figure(1)
-        # plt.plot(test_targets, color='blue')
-        # plt.hold
-        # plt.plot(test_results, color='red')
-        # plt.title("Test Results")
-        # plt.show()
+        print "-"*5, "test target", "-"*5, "test results", "-"*5
+        for i in range(len(test_targets)):
+            print test_targets[i], test_results[0][i]
+        
+
+        test_target_0 = zip(*test_targets)[0]
+        test_result_0 = test_results[0]
+        plt.figure(0)
+        plt.plot(test_target_0, color='blue')
+        plt.hold
+        plt.plot(test_result_0, color='red')
+        plt.title("Test Results")
+        plt.show()
 
         
 

@@ -92,7 +92,7 @@ class Reader:
             ptr += self.data_step
 
         self.batch_index = 0
-        self.batch_size = int(train_prop * len(self.solar_data))
+        #self.batch_size = int(train_prop * len(self.solar_data))
         self.train_batch_num = int(train_prop * len(self.solar_data)) // self.batch_size
         print train_prop, len(self.solar_data), self.batch_size, self.train_batch_num
         
@@ -103,7 +103,11 @@ class Reader:
         return self.pattern
 
     def next_batch(self):
-        """return a batch of train and target data"""
+        """return a batch of train and target data
+        @return solar_data_batch: [batch_size, n_step, n_input]
+        @return temp_data_batch:  [batch_size, n_step, n_input]
+        @return target_data_batch: [n_model, batch_size, n_target], now n_target = 1 and not configurable
+        """
         start = self.batch_index * self.batch_size
         end = (self.batch_index + 1) * self.batch_size 
         solar_data_batch = np.array(self.solar_data[start : end])
@@ -111,7 +115,7 @@ class Reader:
 
         target_data_batch = []
         for i in range(self.n_model):
-            ptr = start*self.data_step + self.n_step + i + 10
+            ptr = start*self.data_step + self.n_step + i
             tmp = []
             for j in range(self.batch_size):
                 tmp.append(self.target_data[ptr])
@@ -124,10 +128,9 @@ class Reader:
 
     def get_test_set(self, test_num):
         test_targets = []
-        for i in range(test_num):  
-            for j in range(self.n_model):
-                test_targets.append(self.target_data[self.test_target_start+i*self.data_step+j+10 : 
-                                                    self.test_target_start+i*self.data_step+j+11])
+        for i in range(test_num):
+            test_targets.append(self.target_data[self.test_target_start+i*self.data_step: 
+                                                    self.test_target_start+i*self.data_step+self.n_model])
         return [self.solar_data[self.test_input_start:self.test_input_start+test_num], 
                 self.temp_data[self.test_input_start:self.test_input_start+test_num], 
                 test_targets]
