@@ -81,7 +81,7 @@ class Reader:
         for i in range(len(target_raw_data)):
             tmp = []
             for j in range(n_target):
-                tmp.append(target_raw_data[i][j] - self.pattern[i%hour_in_a_day][j])
+                tmp.append(target_raw_data[i][j])# - self.pattern[i%hour_in_a_day][j])
             self.target_data.append(tmp)
         
         #get the solar and temp data by organizing the raw data with the time step
@@ -92,6 +92,7 @@ class Reader:
             ptr += self.data_step
 
         self.batch_index = 0
+        self.batch_size = int(train_prop * len(self.solar_data))
         self.train_batch_num = int(train_prop * len(self.solar_data)) // self.batch_size
         print train_prop, len(self.solar_data), self.batch_size, self.train_batch_num
         
