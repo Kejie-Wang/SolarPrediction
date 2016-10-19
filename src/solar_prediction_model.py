@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 
 class Config:
 
-    data_path = "solar_data.pkl"    
+    data_path = "../dataset/solar_data.pkl"    
     #input_group_solar = ['Avg Global CMP22 (vent/cor) [W/m^2]', 'Avg Direct CHP1-1 [W/m^2]', 'Avg Diffuse 8-48 (vent) [W/m^2]']
     input_group_temp = ['Avg Zenith Angle [degrees]','Avg Azimuth Angle [degrees]','Avg Airmass','Avg Tower Dry Bulb Temp [deg C]', 
                             'Avg Deck Dry Bulb Temp [deg C]', 'Avg Tower Wet Bulb Temp [deg C]', 'Avg Tower Dew Point Temp [deg C]',
