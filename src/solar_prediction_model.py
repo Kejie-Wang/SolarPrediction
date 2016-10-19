@@ -195,18 +195,19 @@ def main(_):
 
         #test
         test_results = []
-        solar_test_input, temp_test_input, test_targets = reader.get_test_set(30)
-        for i in range(n_model):
-            test_result = sess.run(predictions[i], feed_dict={x_solar[i]:solar_test_input, x_temp[i]:temp_test_input})
+        solar_test_input, temp_test_input, test_targets = reader.get_test_set(1)
+        for k in range(n_model):
+            test_result = sess.run(predictions[k], feed_dict={x_solar[k]:solar_test_input, x_temp[k]:temp_test_input})
             test_results.append(test_result)
 
-        print "-"*5, "test target", "-"*5, "test results", "-"*5
-        for i in range(len(test_targets)):
-            print test_targets[i], test_results[0][i]
-        
+        #first test result
+        test_target_0 = test_targets[0]
+        test_result_0 = zip(*test_results)[0]
 
-        test_target_0 = zip(*test_targets)[0]
-        test_result_0 = test_results[0]
+        print "-"*5, "test target", "-"*5, "test results", "-"*5
+        for i in range(len(test_target_0)):
+            print test_target_0[i], test_result_0[i]
+        
         plt.figure(0)
         plt.plot(test_target_0, color='blue')
         plt.hold
