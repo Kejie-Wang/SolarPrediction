@@ -172,18 +172,27 @@ def main(_):
                     test_result = sess.run(predictions[k], feed_dict={x_solar[k]:solar_test_input, x_temp[k]:temp_test_input})
                     test_results.append(test_result)
 
+                print test_targets
+                print test_results
                 #first test result
-                test_target_0 = test_targets[0]
-                test_result_0 = zip(*test_results)[0]
+                test_target_all = []
+                test_result_all = []
+
+                for i in range(7):
+                    test_target_all = test_target_all + test_targets[i]
+                    test_result_all = test_result_all + list(zip(*test_results)[i])
+
+                # test_target_0 = test_targets[0]
+                # test_result_0 = zip(*test_results)[0]
 
                 print "-"*5, "test target", "-"*5, "test results", "-"*5
-                for i in range(len(test_target_0)):
-                    print test_target_0[i], test_result_0[i]
+                for i in range(len(test_target_all)):
+                    print test_target_all[i], test_result_all[i]
                 
                 plt.figure(0)
-                plt.plot(test_target_0, color='blue')
+                plt.plot(test_target_all, color='blue')
                 plt.hold
-                plt.plot(test_result_0, color='red')
+                plt.plot(test_result_all, color='red')
                 plt.title("Test Results")
                 plt.show()
 
@@ -194,26 +203,26 @@ def main(_):
         
 
         #test
-        test_results = []
-        solar_test_input, temp_test_input, test_targets = reader.get_test_set(7)
-        for k in range(n_model):
-            test_result = sess.run(predictions[k], feed_dict={x_solar[k]:solar_test_input, x_temp[k]:temp_test_input})
-            test_results.append(test_result)
+        # test_results = []
+        # solar_test_input, temp_test_input, test_targets = reader.get_test_set(7)
+        # for k in range(n_model):
+        #     test_result = sess.run(predictions[k], feed_dict={x_solar[k]:solar_test_input, x_temp[k]:temp_test_input})
+        #     test_results.append(test_result)
 
-        #first test result
-        test_target_0 = test_targets[0]
-        test_result_0 = zip(*test_results)[0]
+        # #first test result
+        # test_target_0 = test_targets[0]
+        # test_result_0 = zip(*test_results)[0]
 
-        print "-"*5, "test target", "-"*5, "test results", "-"*5
-        for i in range(len(test_target_0)):
-            print test_target_0[i], test_result_0[i]
+        # print "-"*5, "test target", "-"*5, "test results", "-"*5
+        # for i in range(len(test_target_0)):
+        #     print test_target_0[i], test_result_0[i]
         
-        plt.figure(0)
-        plt.plot(test_target_0, color='blue')
-        plt.hold
-        plt.plot(test_result_0, color='red')
-        plt.title("Test Results")
-        plt.show()
+        # plt.figure(0)
+        # plt.plot(test_target_0, color='blue')
+        # plt.hold
+        # plt.plot(test_result_0, color='red')
+        # plt.title("Test Results")
+        # plt.show()
 
         
 
