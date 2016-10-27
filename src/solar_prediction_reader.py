@@ -14,21 +14,51 @@ class Reader:
         data = zip(*data)
         return np.array(data)
 
-    def _target_pattern(self, target_raw_data):
-        n_target = len(target_raw_data[0])
-        pattern = []
-        for i in range(hour_in_a_day):
-            pattern.append([0]*n_target)
-        num = [0]*hour_in_a_day
-        for i in range(len(target_raw_data)):
-            for j in range(len(target_raw_data[i])):
-                pattern[i%hour_in_a_day][j] += target_raw_data[i][j]
-            num[i%hour_in_a_day] += 1
-        for i in range(hour_in_a_day):
-            for j in range(n_target):
-                pattern[i][j] /= num[i]
+    # Compute the target pattern in the total dataset
 
-        return pattern
+    # def _target_pattern(self, target_raw_data):
+    #     n_target = len(target_raw_data[0])
+    #     pattern = []
+    #     for i in range(hour_in_a_day):
+    #         pattern.append([0]*n_target)
+    #     num = [0]*hour_in_a_day
+    #     for i in range(len(target_raw_data)):
+    #         for j in range(len(target_raw_data[i])):
+    #             pattern[i%hour_in_a_day][j] += target_raw_data[i][j]
+    #         num[i%hour_in_a_day] += 1
+    #     for i in range(hour_in_a_day):
+    #         for j in range(n_target):
+    #             pattern[i][j] /= num[i]
+
+    #     return pattern
+
+
+    def _target_patterns(self, target_raw_data, n_step):
+        n_target = len(target_raw_data[0])
+        hours = len(target_raw_data)
+        days = hours / hour_in_a_day
+        feature_days = n_step / hour_in_a_day
+
+        patterns = []
+        
+        for d in range(days):
+            #the pattern of first n_step/hour_in_a_day is useless
+            #and there is no enough data to compute it
+            start = d - feature_days < 0 ? 0 : d - feature_days
+            pattern = []
+            for _ in range(hour_in_a_day):
+                pattern.append([0]*n_target)
+            for i in range(start, d):
+                for j in range(hour_in_a_day):
+                    for k in range(n_target):
+                        pattern[j][k] += target_raw_data[i*hour_in_a_day+j][k]
+            for j in range(hour_in_a_day):
+                for k in range(n_target):
+                    pattern[j][k] /= feature_days
+            patterns.append(pattern)
+
+        return patterns 
+
 
     def __init__(self, data_path, config):
         #load data
@@ -65,13 +95,16 @@ class Reader:
 
         #select the data and reshape the data
         target_raw_data = self._data_reshape(input_data_pd, target_group, 0, len(input_data_pd))
-        #get the target pattern
-        self.pattern = self._target_pattern(target_raw_data)
 
         #feature scale
+        #feature scale after getting the target data
+        #the target data do NOT need to be scaled
         input_data_pd = (input_data_pd - input_data_pd.mean()) / input_data_pd.std()
         solar_raw_data = self._data_reshape(input_data_pd, input_group_solar, 0, data_length)
         temp_raw_data = self._data_reshape(input_data_pd, input_group_temp, 0, data_length)
+
+        #get the target pattern
+        self.patterns = self._target_patterns(target_raw_data, n_step)
 
         self.solar_data = []
         self.temp_data = []
@@ -79,9 +112,11 @@ class Reader:
         #minus the pattern from the raw data
         n_target = len(target_raw_data[0])
         for i in range(len(target_raw_data)):
+            day = i/hour_in_a_day
+            hour = i%hour_in_a_day
             tmp = []
             for j in range(n_target):
-                tmp.append(target_raw_data[i][j])# - self.pattern[i%hour_in_a_day][j])
+                tmp.append(target_raw_data[i][j] - self.pattern[day][hour][j])
             self.target_data.append(tmp)
         
         #get the solar and temp data by organizing the raw data with the time step
