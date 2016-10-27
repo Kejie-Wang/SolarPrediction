@@ -17,20 +17,20 @@ class Config:
 
     group = []
 
-    batch_size = 150
+    batch_size = 100
     n_step = 120
     n_predict = 1
 
     data_length = 14400 #600 days
-    data_step = 60  #the step in generating the trian set if 1, most overlap; if n_step, no overlap
+    data_step = 24  #the step in generating the trian set if 1, most overlap; if n_step, no overlap
     train_prop = 0.8
-    epoch_size = 500
+    epoch_size = 1000
     print_step = 50
-    test_step = 100
+    test_step = 200
 
     n_hidden_solar = 64
     n_hidden_temp = 64
-    n_hidden_level2 = 256
+    n_hidden_level2 = 128
 
     n_model = 24
 
@@ -87,11 +87,11 @@ class SolarPredictionModel:
             output = tf.gather(outputs, int(outputs.get_shape()[0]) - 1)
 
             #regression
-            weight1 = tf.Variable(tf.truncated_normal([self.n_hidden_level2, 128]), dtype=tf.float32)
-            bias1 = tf.Variable(tf.constant(0.1, shape=[128]), dtype=tf.float32)
+            weight1 = tf.Variable(tf.truncated_normal([self.n_hidden_level2, 64]), dtype=tf.float32)
+            bias1 = tf.Variable(tf.constant(0.1, shape=[64]), dtype=tf.float32)
             out1 = tf.nn.relu(tf.matmul(output, weight1) + bias1)
 
-            weight2 = tf.Variable(tf.truncated_normal([128, 1]), dtype=tf.float32)
+            weight2 = tf.Variable(tf.truncated_normal([64, 1]), dtype=tf.float32)
             bias2 = tf.Variable(tf.constant(0.1, shape=[1]), dtype=tf.float32)
             self._prediction = tf.matmul(out1, weight2) + bias2
 
@@ -153,7 +153,7 @@ def main(_):
     with tf.Session() as sess:
         tf.initialize_all_variables().run()
 
-        # save_path = saver.restore(sess, config.model_path)
+        save_path = saver.restore(sess, config.model_path)
         
         #train
         for i in range(epoch_size+1):
@@ -167,23 +167,32 @@ def main(_):
 
             if i%config.test_step == 0:
                 test_results = []
-                solar_test_input, temp_test_input, test_targets = reader.get_test_set(1)
+                solar_test_input, temp_test_input, test_targets = reader.get_test_set(7)
                 for k in range(n_model):
                     test_result = sess.run(predictions[k], feed_dict={x_solar[k]:solar_test_input, x_temp[k]:temp_test_input})
                     test_results.append(test_result)
 
+                print test_targets
+                print test_results
                 #first test result
-                test_target_0 = test_targets[0]
-                test_result_0 = zip(*test_results)[0]
+                test_target_all = []
+                test_result_all = []
+
+                for i in range(7):
+                    test_target_all = test_target_all + test_targets[i]
+                    test_result_all = test_result_all + list(zip(*test_results)[i])
+
+                # test_target_0 = test_targets[0]
+                # test_result_0 = zip(*test_results)[0]
 
                 print "-"*5, "test target", "-"*5, "test results", "-"*5
-                for i in range(len(test_target_0)):
-                    print test_target_0[i], test_result_0[i]
+                for i in range(len(test_target_all)):
+                    print test_target_all[i], test_result_all[i]
                 
                 plt.figure(0)
-                plt.plot(test_target_0, color='blue')
+                plt.plot(test_target_all, color='blue')
                 plt.hold
-                plt.plot(test_result_0, color='red')
+                plt.plot(test_result_all, color='red')
                 plt.title("Test Results")
                 plt.show()
 
@@ -194,26 +203,26 @@ def main(_):
         
 
         #test
-        test_results = []
-        solar_test_input, temp_test_input, test_targets = reader.get_test_set(1)
-        for k in range(n_model):
-            test_result = sess.run(predictions[k], feed_dict={x_solar[k]:solar_test_input, x_temp[k]:temp_test_input})
-            test_results.append(test_result)
+        # test_results = []
+        # solar_test_input, temp_test_input, test_targets = reader.get_test_set(7)
+        # for k in range(n_model):
+        #     test_result = sess.run(predictions[k], feed_dict={x_solar[k]:solar_test_input, x_temp[k]:temp_test_input})
+        #     test_results.append(test_result)
 
-        #first test result
-        test_target_0 = test_targets[0]
-        test_result_0 = zip(*test_results)[0]
+        # #first test result
+        # test_target_0 = test_targets[0]
+        # test_result_0 = zip(*test_results)[0]
 
-        print "-"*5, "test target", "-"*5, "test results", "-"*5
-        for i in range(len(test_target_0)):
-            print test_target_0[i], test_result_0[i]
+        # print "-"*5, "test target", "-"*5, "test results", "-"*5
+        # for i in range(len(test_target_0)):
+        #     print test_target_0[i], test_result_0[i]
         
-        plt.figure(0)
-        plt.plot(test_target_0, color='blue')
-        plt.hold
-        plt.plot(test_result_0, color='red')
-        plt.title("Test Results")
-        plt.show()
+        # plt.figure(0)
+        # plt.plot(test_target_0, color='blue')
+        # plt.hold
+        # plt.plot(test_result_0, color='red')
+        # plt.title("Test Results")
+        # plt.show()
 
         
 
