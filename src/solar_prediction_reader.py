@@ -36,15 +36,17 @@ class Reader:
     def _target_patterns(self, target_raw_data, n_step):
         n_target = len(target_raw_data[0])
         hours = len(target_raw_data)
-        days = hours / hour_in_a_day
-        feature_days = n_step / hour_in_a_day
+        days = hours // hour_in_a_day
+        feature_days = n_step // hour_in_a_day
 
         patterns = []
         
         for d in range(days):
             #the pattern of first n_step/hour_in_a_day is useless
             #and there is no enough data to compute it
-            start = d - feature_days < 0 ? 0 : d - feature_days
+            start = d - feature_days
+            if start < 0:
+                start = 0
             pattern = []
             for _ in range(hour_in_a_day):
                 pattern.append([0]*n_target)
@@ -104,19 +106,22 @@ class Reader:
         temp_raw_data = self._data_reshape(input_data_pd, input_group_temp, 0, data_length)
 
         #get the target pattern
-        self.patterns = self._target_patterns(target_raw_data, n_step)
-
+        self.patterns = self._target_patterns(target_raw_data, self.n_step)
+        # print "*"*50
+        # print self.patterns[10]
+        # print "*"*50
+        # print self.patterns[100]
         self.solar_data = []
         self.temp_data = []
         self.target_data = []   
         #minus the pattern from the raw data
         n_target = len(target_raw_data[0])
         for i in range(len(target_raw_data)):
-            day = i/hour_in_a_day
+            day = i // hour_in_a_day
             hour = i%hour_in_a_day
             tmp = []
             for j in range(n_target):
-                tmp.append(target_raw_data[i][j] - self.pattern[day][hour][j])
+                tmp.append(target_raw_data[i][j] - self.patterns[day][hour][j])
             self.target_data.append(tmp)
         
         #get the solar and temp data by organizing the raw data with the time step
@@ -134,8 +139,8 @@ class Reader:
         self.test_input_start = self.train_batch_num * self.batch_size
         self.test_target_start = self.test_input_start*self.data_step + self.n_step
 
-    def get_pattern(self):
-        return self.pattern
+    def get_pattern(self, day):
+        return self.patterns[day]
 
     def next_batch(self):
         """return a batch of train and target data

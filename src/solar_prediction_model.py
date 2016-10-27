@@ -153,7 +153,7 @@ def main(_):
     with tf.Session() as sess:
         tf.initialize_all_variables().run()
 
-        save_path = saver.restore(sess, config.model_path)
+        # save_path = saver.restore(sess, config.model_path)
         
         #train
         for i in range(epoch_size+1):
