@@ -172,8 +172,6 @@ def main(_):
                     test_result = sess.run(predictions[k], feed_dict={x_solar[k]:solar_test_input, x_temp[k]:temp_test_input})
                     test_results.append(test_result)
 
-                print test_targets
-                print test_results
                 #first test result
                 test_target_all = []
                 test_result_all = []
