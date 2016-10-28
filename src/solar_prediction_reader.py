@@ -121,7 +121,7 @@ class Reader:
             hour = i%hour_in_a_day
             tmp = []
             for j in range(n_target):
-                tmp.append(target_raw_data[i][j] - self.patterns[day][hour][j])
+                tmp.append(target_raw_data[i][j]) #- (self.patterns[day][hour][j])
             self.target_data.append(tmp)
         
         #get the solar and temp data by organizing the raw data with the time step
@@ -141,6 +141,10 @@ class Reader:
 
     def get_pattern(self, day):
         return self.patterns[day]
+
+
+    def get_target_before_test(self, hours):
+        return self.target_data[self.test_target_start-hours:self.test_target_start]
 
     def next_batch(self):
         """return a batch of train and target data

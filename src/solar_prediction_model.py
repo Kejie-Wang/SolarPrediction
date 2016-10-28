@@ -3,6 +3,8 @@
 import tensorflow as tf
 import solar_prediction_reader
 import matplotlib.pyplot as plt
+from scipy import interpolate
+import numpy as np
 
 class Config:
 
@@ -17,9 +19,10 @@ class Config:
 
     group = []
 
-    batch_size = 100
+    batch_size = 400
     n_step = 120
     n_predict = 1
+    n_target = 1
 
     data_length = 14400 #600 days
     data_step = 24  #the step in generating the trian set if 1, most overlap; if n_step, no overlap
@@ -115,10 +118,45 @@ class SolarPredictionModel:
         return self._loss
 
 
+def figurePlot(y_train, y_test, y_result):
+    train_len = len(y_train)
+    test_len = len(y_test)
+
+    x_train = range(-train_len,0)
+    x_test = range(0, test_len)
+
+    # print train_len
+    # print test_len
+    # print len(y_result)
+    # print len(x_train+x_test)
+    # print len(y_train+y_test)
+
+
+    plt.figure(0)
+    plt.title("Solar Prediction")
+    plt.xlabel('Time/hour')
+    plt.ylabel('Avg Global CMP22 (vent/cor) [W/m^2]')
+
+    f1 = interpolate.interp1d(x_train+x_test, y_train+y_test, kind='cubic')
+    xnew = np.arange(-train_len, test_len-1, 0.01)
+    ynew = f1(xnew)
+    #plt.plot(x_train+x_test, y_train+y_test, 'o', xnew, ynew, '-', color='blue')
+    plt.plot(xnew, ynew, color='blue')
+
+    f2 = interpolate.interp1d(x_test, y_result, kind='cubic')
+    xnew = np.arange(0, test_len-1, 0.01)
+    ynew = f2(xnew)
+    #plt.plot(x_test, y_result, 'o', xnew, ynew, '-', color='red')
+    plt.plot(xnew, ynew, color='red')
+    plt.show()
+
+
+
 def main(_):
     #get the config
     config = Config()
     n_step = config.n_step
+    n_target = config.n_target
     n_input_solar = len(config.input_group_solar)
     n_input_temp = len(config.input_group_temp)
     epoch_size = config.epoch_size
@@ -153,7 +191,7 @@ def main(_):
     with tf.Session() as sess:
         tf.initialize_all_variables().run()
 
-        # save_path = saver.restore(sess, config.model_path)
+        save_path = saver.restore(sess, config.model_path)
         
         #train
         for i in range(epoch_size+1):
@@ -167,34 +205,39 @@ def main(_):
 
             if i%config.test_step == 0:
                 test_results = []
-                solar_test_input, temp_test_input, test_targets = reader.get_test_set(7)
+                solar_test_input, temp_test_input, test_targets = reader.get_test_set(5)
                 for k in range(n_model):
                     test_result = sess.run(predictions[k], feed_dict={x_solar[k]:solar_test_input, x_temp[k]:temp_test_input})
                     test_results.append(test_result)
+                
 
-                print test_targets
-                print test_results
-                #first test result
                 test_target_all = []
                 test_result_all = []
 
-                for i in range(7):
+                for i in range(5):
                     test_target_all = test_target_all + test_targets[i]
                     test_result_all = test_result_all + list(zip(*test_results)[i])
 
-                # test_target_0 = test_targets[0]
-                # test_result_0 = zip(*test_results)[0]
+                test_target_all = zip(*test_target_all)
+                test_result_all = zip(*test_result_all)
 
-                print "-"*5, "test target", "-"*5, "test results", "-"*5
-                for i in range(len(test_target_all)):
-                    print test_target_all[i], test_result_all[i]
-                
-                plt.figure(0)
-                plt.plot(test_target_all, color='blue')
-                plt.hold
-                plt.plot(test_result_all, color='red')
-                plt.title("Test Results")
-                plt.show()
+                #get the target real data from the reader
+                #use to plot in the figure
+                target_before_test_all = reader.get_target_before_test(120)
+                target_before_test_all = zip(*target_before_test_all)
+
+
+                for i in range(n_target):
+                    # print "-"*5, "test target", "-"*5, "test results", "-"*5
+                    # for i in range(len(test_target_all)):
+                    #     print test_target_all[i], test_result_all[i]
+                    figurePlot(list(target_before_test_all[i]), list(test_target_all[i]), list(test_result_all[i]))
+                    # plt.figure(0)
+                    # plt.plot(test_target_all, color='blue')
+                    # plt.hold
+                    # plt.plot(test_result_all, color='red')
+                    # plt.title("Test Results")
+                    # plt.show()
 
                     
         
