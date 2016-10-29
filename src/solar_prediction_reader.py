@@ -134,13 +134,7 @@ class Reader:
             hour = i % hour_in_a_day
             tmp = []
             for j in range(n_target):
-<<<<<<< HEAD
                 tmp.append(target_raw_data[i][j]) #- (self.patterns[day][hour][j])
-=======
-                tmp.append(target_raw_data[i][j] - self.patterns[day][hour][j])
-                if day == 400:
-                    print target_raw_data[i][j], self.patterns[day][hour][j]
->>>>>>> 67745d36d816e116247b39c3eebcf0bcd429b1c7
             self.target_data.append(tmp)
         
         #get the solar and temp data by organizing the raw data with the time step
