@@ -115,7 +115,7 @@ def figurePlot(y_train, y_test, y_result, index):
 
 def main(_):
     #get the config
-    fp = open('config.json')
+    fp = open('../config.json')
     config = json.load(fp, object_hook=lambda d:namedtuple('X', d.keys())(*d.values()))
     fp.close()
 
@@ -155,6 +155,7 @@ def main(_):
     with tf.Session() as sess:
         tf.initialize_all_variables().run()
 
+        #restore the model
         save_path = saver.restore(sess, config.model_path)
         
         #train
@@ -176,11 +177,6 @@ def main(_):
                     test_result = sess.run(predictions[k], feed_dict={x_solar[k]:solar_test_input, x_temp[k]:temp_test_input})
                     test_results.append(test_result)
                 
-
-<<<<<<< HEAD
-=======
-                #first test result
->>>>>>> 67745d36d816e116247b39c3eebcf0bcd429b1c7
                 test_target_all = []
                 test_result_all = []
 
@@ -204,9 +200,7 @@ def main(_):
                 for i in range(n_target):
                     figurePlot(list(target_before_test_all[i]), list(test_target_all[i]), list(test_result_all[i]), i)
 
-                    
-        
-
+        #save the model
         save_path = saver.save(sess, config.model_path)
 
 if __name__ == "__main__":
