@@ -63,6 +63,20 @@ class Reader:
 
 
     def __init__(self, data_path, config):
+        """
+        Dataset sketch:
+            The symbol '-' represents feature
+            The symbol '*' represents target
+            ---------------------*******
+            ############--------------------*******
+                        ############---------------------*******
+                                    ############---------------------*******
+            It show four pairs of (feature, target)
+            The length of the '-' is n_step
+            The length of the '#' is data step
+            The length of the '*' is the model number
+        """
+
         #load data
         pickle_input_data = open(data_path,'rb')
         input_data_pd = pickle.load(pickle_input_data)
@@ -107,10 +121,9 @@ class Reader:
 
         #get the target pattern
         self.patterns = self._target_patterns(target_raw_data, self.n_step)
-        # print "*"*50
-        # print self.patterns[10]
-        # print "*"*50
-        # print self.patterns[100]
+
+        print self.patterns[400]
+
         self.solar_data = []
         self.temp_data = []
         self.target_data = []   
@@ -118,26 +131,50 @@ class Reader:
         n_target = len(target_raw_data[0])
         for i in range(len(target_raw_data)):
             day = i // hour_in_a_day
-            hour = i%hour_in_a_day
+            hour = i % hour_in_a_day
             tmp = []
             for j in range(n_target):
+<<<<<<< HEAD
                 tmp.append(target_raw_data[i][j]) #- (self.patterns[day][hour][j])
+=======
+                tmp.append(target_raw_data[i][j] - self.patterns[day][hour][j])
+                if day == 400:
+                    print target_raw_data[i][j], self.patterns[day][hour][j]
+>>>>>>> 67745d36d816e116247b39c3eebcf0bcd429b1c7
             self.target_data.append(tmp)
         
         #get the solar and temp data by organizing the raw data with the time step
+        #unit the n_step data point into a vector
         ptr = 0
         while ptr + self.n_step <= data_length:
             self.solar_data.append(solar_raw_data[ptr:ptr+self.n_step])
             self.temp_data.append(temp_raw_data[ptr:ptr+self.n_step])
             ptr += self.data_step
 
+        #record the current batch index
+        #used by the next batch function
+        #increase one when read a batch for the reader
         self.batch_index = 0
-        #self.batch_size = int(train_prop * len(self.solar_data))
+
+        #the num of batch in the train set
         self.train_batch_num = int(train_prop * len(self.solar_data)) // self.batch_size
         print train_prop, len(self.solar_data), self.batch_size, self.train_batch_num
         
+        #the start of input and target the test set in the raw data
+        #the feature of the test set just follow the end the train set
+        #the target of the test set has a n_step gap after the test set start
+        #Moreover, the input of the test set (feature) is increased by one
+        #But the target is increased by data step
         self.test_input_start = self.train_batch_num * self.batch_size
         self.test_target_start = self.test_input_start*self.data_step + self.n_step
+
+        print "*"*30, "dataset info", "*"*30
+        print "total data length:", len(self.solar_data)
+        print "batch size:", self.batch_size
+        print "train batch number:", self.train_batch_num
+        print "train length:", self.batch_size * self.train_batch_num
+        print "test input start:",self. test_input_start
+        print "test target start:", self.test_target_start
 
     def get_pattern(self, day):
         return self.patterns[day]

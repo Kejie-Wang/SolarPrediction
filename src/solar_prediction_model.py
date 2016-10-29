@@ -177,6 +177,10 @@ def main(_):
                     test_results.append(test_result)
                 
 
+<<<<<<< HEAD
+=======
+                #first test result
+>>>>>>> 67745d36d816e116247b39c3eebcf0bcd429b1c7
                 test_target_all = []
                 test_result_all = []
 
