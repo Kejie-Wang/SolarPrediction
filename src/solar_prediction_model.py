@@ -5,44 +5,13 @@ import solar_prediction_reader
 import matplotlib.pyplot as plt
 from scipy import interpolate
 import numpy as np
-
-class Config:
-
-    data_path = "../dataset/solar_data.pkl"    
-    #input_group_solar = ['Avg Global CMP22 (vent/cor) [W/m^2]', 'Avg Direct CHP1-1 [W/m^2]', 'Avg Diffuse 8-48 (vent) [W/m^2]']
-    input_group_temp = ['Avg Zenith Angle [degrees]','Avg Azimuth Angle [degrees]','Avg Airmass','Avg Tower Dry Bulb Temp [deg C]', 
-                            'Avg Deck Dry Bulb Temp [deg C]', 'Avg Tower Wet Bulb Temp [deg C]', 'Avg Tower Dew Point Temp [deg C]',
-                            'Avg Total Cloud Cover [%]','Avg Opaque Cloud Cover [%]', 'Avg Precipitation [mm]']
-    target_group = ['Avg Global CMP22 (vent/cor) [W/m^2]']
-
-    input_group_solar = ['Avg Total Cloud Cover [%]','Avg Tower Dry Bulb Temp [deg C]','Avg Direct CHP1-1 [W/m^2]']
-
-    group = []
-
-    batch_size = 400
-    n_step = 120
-    n_predict = 1
-    n_target = 1
-
-    data_length = 14400 #600 days
-    data_step = 24  #the step in generating the trian set if 1, most overlap; if n_step, no overlap
-    train_prop = 0.8
-    epoch_size = 1000
-    print_step = 50
-    test_step = 200
-
-    n_hidden_solar = 64
-    n_hidden_temp = 64
-    n_hidden_level2 = 128
-
-    n_model = 24
-
-    model_path = "model.ckpt"
+import json
+from collections import namedtuple
 
 
 class SolarPredictionModel:
     def __init__(self, data, target, config, n_model):
-        self._prediction = None
+        #load the 
         self.n_hidden_solar = config.n_hidden_solar
         self.n_hidden_temp = config.n_hidden_temp
         self.n_hidden_level2 = config.n_hidden_level2
@@ -118,21 +87,14 @@ class SolarPredictionModel:
         return self._loss
 
 
-def figurePlot(y_train, y_test, y_result):
+def figurePlot(y_train, y_test, y_result, index):
     train_len = len(y_train)
     test_len = len(y_test)
 
     x_train = range(-train_len,0)
     x_test = range(0, test_len)
 
-    # print train_len
-    # print test_len
-    # print len(y_result)
-    # print len(x_train+x_test)
-    # print len(y_train+y_test)
-
-
-    plt.figure(0)
+    plt.figure(index)
     plt.title("Solar Prediction")
     plt.xlabel('Time/hour')
     plt.ylabel('Avg Global CMP22 (vent/cor) [W/m^2]')
@@ -151,10 +113,12 @@ def figurePlot(y_train, y_test, y_result):
     plt.show()
 
 
-
 def main(_):
     #get the config
-    config = Config()
+    fp = open('config.json')
+    config = json.load(fp, object_hook=lambda d:namedtuple('X', d.keys())(*d.values()))
+    fp.close()
+
     n_step = config.n_step
     n_target = config.n_target
     n_input_solar = len(config.input_group_solar)
@@ -203,6 +167,8 @@ def main(_):
 
                 sess.run(optimizes[j], feed_dict={x_solar[j]:batch[0], x_temp[j]:batch[1], y_[j]:batch[2][j]})
 
+
+            # test
             if i%config.test_step == 0:
                 test_results = []
                 solar_test_input, temp_test_input, test_targets = reader.get_test_set(5)
@@ -218,6 +184,9 @@ def main(_):
                     test_target_all = test_target_all + test_targets[i]
                     test_result_all = test_result_all + list(zip(*test_results)[i])
 
+                #reshape the list by zip all value of the same target dimension into a tuple
+                #[test_size, n_target]
+                #[n_target, test_size]
                 test_target_all = zip(*test_target_all)
                 test_result_all = zip(*test_result_all)
 
@@ -226,50 +195,15 @@ def main(_):
                 target_before_test_all = reader.get_target_before_test(120)
                 target_before_test_all = zip(*target_before_test_all)
 
-
+                #plot each target dimension result in a figure
+                #now the target is one  dim, so there is only one figure
                 for i in range(n_target):
-                    # print "-"*5, "test target", "-"*5, "test results", "-"*5
-                    # for i in range(len(test_target_all)):
-                    #     print test_target_all[i], test_result_all[i]
-                    figurePlot(list(target_before_test_all[i]), list(test_target_all[i]), list(test_result_all[i]))
-                    # plt.figure(0)
-                    # plt.plot(test_target_all, color='blue')
-                    # plt.hold
-                    # plt.plot(test_result_all, color='red')
-                    # plt.title("Test Results")
-                    # plt.show()
+                    figurePlot(list(target_before_test_all[i]), list(test_target_all[i]), list(test_result_all[i]), i)
 
                     
         
 
         save_path = saver.save(sess, config.model_path)
-        
-
-        #test
-        # test_results = []
-        # solar_test_input, temp_test_input, test_targets = reader.get_test_set(7)
-        # for k in range(n_model):
-        #     test_result = sess.run(predictions[k], feed_dict={x_solar[k]:solar_test_input, x_temp[k]:temp_test_input})
-        #     test_results.append(test_result)
-
-        # #first test result
-        # test_target_0 = test_targets[0]
-        # test_result_0 = zip(*test_results)[0]
-
-        # print "-"*5, "test target", "-"*5, "test results", "-"*5
-        # for i in range(len(test_target_0)):
-        #     print test_target_0[i], test_result_0[i]
-        
-        # plt.figure(0)
-        # plt.plot(test_target_0, color='blue')
-        # plt.hold
-        # plt.plot(test_result_0, color='red')
-        # plt.title("Test Results")
-        # plt.show()
-
-        
-
-
 
 if __name__ == "__main__":
     tf.app.run()

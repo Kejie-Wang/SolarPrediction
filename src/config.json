@@ -1,0 +1,47 @@
+{
+    "data_path" : "../dataset/solar_data.pkl", 
+        "input_group_temp": [
+        "Avg Zenith Angle [degrees]",
+        "Avg Azimuth Angle [degrees]",
+        "Avg Airmass",
+        "Avg Tower Dry Bulb Temp [deg C]", 
+        "Avg Deck Dry Bulb Temp [deg C]", 
+        "Avg Tower Wet Bulb Temp [deg C]", 
+        "Avg Tower Dew Point Temp [deg C]",
+        "Avg Total Cloud Cover [%]",
+        "Avg Opaque Cloud Cover [%]", 
+        "Avg Precipitation [mm]"
+    ],
+    "target_group" : [
+        "Avg Global CMP22 (vent/cor) [W/m^2]"
+    ],
+
+    "input_group_solar" : [
+        "Avg Total Cloud Cover [%]",
+        "Avg Tower Dry Bulb Temp [deg C]",
+        "Avg Direct CHP1-1 [W/m^2]"
+    ],
+
+    "group" : [
+    ],
+
+    "batch_size" : 400,
+    "n_step" : 120,
+    "n_predict" : 1,
+    "n_target" : 1,
+
+    "data_length" : 14400,
+    "data_step" : 24,
+    "train_prop" : 0.8, 
+    "epoch_size" : 1000, 
+    "print_step" : 50, 
+    "test_step" : 200, 
+
+    "n_hidden_solar" : 64, 
+    "n_hidden_temp" : 64, 
+    "n_hidden_level2" : 128, 
+
+    "n_model" : 24,
+
+    "model_path" : "model.ckpt"
+}
