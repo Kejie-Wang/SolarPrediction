@@ -77,9 +77,11 @@ class SolarPredictionModel:
 
 
     @property
-    def optimize(self):
+    def optimize(self, lr_set=False):
     	# print "optimize"
-        if self._optimize is None:
+        if (self._optimize is None) or lr_set:
+            if lr_set:
+                self.lr = self.lr / 10
             optimizer = tf.train.AdamOptimizer(self.lr)
             self._optimize = optimizer.minimize(self.loss)
         return self._optimize
@@ -91,12 +93,14 @@ class SolarPredictionModel:
         if self._loss is None:
             self._loss = tf.reduce_mean(tf.square(self.prediction-self.target))
         return self._loss
+
     def MAE(self):
         if self._mae == None:
             self._mae = tf.reduce_mean(tf.abs(self.prediction - self.target))
         return self._mae
 
-
+def matrix_transpose(matrix):
+    return [list(x) for x in zip(*matrix)]
 
 def figurePlot(y_train, y_test, y_result, index):
     train_len = len(y_train)
@@ -164,51 +168,58 @@ def main(_):
     #new a saver to save the model
     saver = tf.train.Saver()
 
+    validation_last_loss = [float('inf')]*n_model
+    is_stop_training = [3]*n_model
+
     with tf.Session() as sess:
         tf.initialize_all_variables().run()
 
         #restore the model
-        save_path = saver.restore(sess, config.model_path)
+        # save_path = saver.restore(sess, config.model_path)
         
         for i in range(epoch_size+1):
             
             # test
             test_days = 5
             if i%config.test_step == 0:
-                test_results = []
+                test_results = []   #[n_model, test_num, n_target]
+                #solar_test_input, temp_test_input: [test_num, n_step, n_input]
+                #test_targets: [test_num, n_model, n_target]
                 solar_test_input, temp_test_input, test_targets = reader.get_test_set(test_days)
                 for k in range(n_model):
-                    test_result = sess.run(predictions[k], feed_dict={x_solar[k]:       solar_test_input, 
-                                                                        x_temp[k]:      temp_test_input,
-                                                                        keep_prob[k]:   1.0
+                    test_result = sess.run(predictions[k], feed_dict={x_solar[k]:solar_test_input, 
+                                                                        x_temp[k]:temp_test_input,
+                                                                        keep_prob[k]:1.0
                                                                         })
                     test_results.append(test_result)
+
+
+                #[test_num, n_model, n_target]
+                test_results = matrix_transpose(test_results)
                 
+                #[n_model*test_num, n_target]
                 test_target_all = []
                 test_result_all = []
 
                 for i in range(test_days):
                     test_target_all = test_target_all + test_targets[i]
-                    test_result_all = test_result_all + list(zip(*test_results)[i])
+                    test_result_all = test_result_all + test_results[i]
 
-                for i in range(len(test_result_all)):
-                    print test_target_all[i], test_result_all[i]
 
                 #reshape the list by zip all value of the same target dimension into a tuple
-                #[test_size, n_target]
-                #[n_target, test_size]
-                test_target_all = zip(*test_target_all)
-                test_result_all = zip(*test_result_all)
+                #[n_model*test_num, n_target] => [n_target, test_size]
+                test_target_all = matrix_transpose(test_target_all)
+                test_result_all = matrix_transpose(test_result_all)
 
                 #get the target real data from the reader
                 #use to plot in the figure
-                target_before_test_all = reader.get_target_before_test(120)
-                target_before_test_all = zip(*target_before_test_all)
+                #[target_num, n_target]
+                target_before_test = reader.get_target_before_test(120)
+                #transpose to [n_target, target_num]
+                target_before_test_all = matrix_transpose(target_before_test)
 
                 #calculate the mse and mae
-                mse = 0
-                mae = 0
-                cnt = 0
+                mse = mae = cnt = 0
                 for i in range(n_target):
                     for j in range(len(test_target_all[i])):
                         mse += (test_target_all[i][j] - test_result_all[i][j])**2
@@ -224,29 +235,43 @@ def main(_):
                     figurePlot(list(target_before_test_all[i]), list(test_target_all[i]), list(test_result_all[i]), i)
 
 
-
+            validation_set = reader.get_validation_set()
 
             #train
             batch = reader.next_batch()
             for j in range(n_model):
+                if sum(is_stop_training) <= 0:
+                    print "STOP TRAINING"
+
                 if i%print_step == 0:
-                    l = sess.run(losses[j], feed_dict={x_solar[j]:      batch[0], 
-                                                        x_temp[j]:      batch[1], 
-                                                        y_[j]:          batch[2][j],
-                                                        keep_prob[j]:   0.5
+                    train_loss = sess.run(losses[j], feed_dict={x_solar[j]:batch[0], 
+                                                        x_temp[j]:batch[1], 
+                                                        y_[j]:batch[2][j],
+                                                        keep_prob[j]:0.5
                                                         })
-                    print "model", j, "training loss:", l
+                    print "model", j, "training loss:", train_loss
 
-                sess.run(optimizes[j], feed_dict={x_solar[j]:       batch[0], 
-                                                   x_temp[j]:       batch[1], 
-                                                   y_[j]:           batch[2][j],
-                                                   keep_prob[j]:    0.5 
+                #model j has already stopped training
+                if(is_stop_training[j] <= 0):
+                    continue
+                sess.run(optimizes[j], feed_dict={x_solar[j]:batch[0], 
+                                                   x_temp[j]:batch[1], 
+                                                   y_[j]:batch[2][j],
+                                                   keep_prob[j]:0.5 
                                                    })
-
+                validation_loss = sess.run(losses[j],feed_dict={x_solar[j]:validation_set[0], 
+                                                        x_temp[j]:validation_set[1], 
+                                                        y_[j]:validation_set[2][j],
+                                                        keep_prob[j]:1.0
+                                                        })
+                if(validation_loss < validation_last_loss[j]):
+                    is_stop_training[j] = 3
+                else:
+                    is_stop_training[j] -= 1
+                    validation_last_loss[j] = validation_loss
 
         #save the model
         save_path = saver.save(sess, config.model_path)
 
 if __name__ == "__main__":
     tf.app.run()
-
