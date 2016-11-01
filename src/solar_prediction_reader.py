@@ -159,7 +159,7 @@ class Reader:
         #the target of the test set has a n_step gap after the test set start
         #Moreover, the input of the test set (feature) is increased by one
         #But the target is increased by data step
-        self.test_input_start = self.train_batch_num * self.batch_size
+        self.test_input_start = self.train_batch_num * self.batch_size + 53
         self.test_target_start = self.test_input_start*self.data_step + self.n_step
 
         print "*"*30, "dataset info", "*"*30

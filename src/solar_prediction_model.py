@@ -9,19 +9,23 @@ import json
 from collections import namedtuple
 
 
+
 class SolarPredictionModel:
-    def __init__(self, data, target, config, n_model):
+    def __init__(self, data, target, keep_prob, config, n_model):
         #load the 
         self.n_hidden_solar = config.n_hidden_solar
         self.n_hidden_temp = config.n_hidden_temp
         self.n_hidden_level2 = config.n_hidden_level2
+        self.lr = config.lr
         self.solar_data = data[0]
         self.solar_temp = data[1]
         self.target = target
+        self.keep_prob = keep_prob
 
         self._prediction = None
         self._optimize = None
         self._loss = None
+        self._mae = None
 
         self.n_model = n_model
 
@@ -30,42 +34,44 @@ class SolarPredictionModel:
     def prediction(self):
         if self._prediction is None: 
 
-            #build the graph
-            #solar rnn lstm
-            # with tf.variable_scope("solar_level1"):
-            #     cell_solar = tf.nn.rnn_cell.LSTMCell(self.n_hidden_solar, state_is_tuple=True)
-            #     outputs_solar, state_solar = tf.nn.dynamic_rnn(cell_solar, self.solar_data, dtype=tf.float32)
+            # build the graph
+            # solar rnn lstm
+            with tf.variable_scope("solar_level1"+str(self.n_model)):
+                cell_solar = tf.nn.rnn_cell.LSTMCell(self.n_hidden_solar, state_is_tuple=True)
+                outputs_solar, state_solar = tf.nn.dynamic_rnn(cell_solar, self.solar_data, dtype=tf.float32)
 
-            # #temp rnn lstm
-            # with tf.variable_scope("temp_level1"):
-            #     cell_temp = tf.nn.rnn_cell.LSTMCell(self.n_hidden_temp, state_is_tuple=True)
-            #     outputs_temp, state_temp = tf.nn.dynamic_rnn(cell_temp, self.solar_temp, dtype=tf.float32)
+            # temp rnn lstm
+            with tf.variable_scope("temp_level1"+str(self.n_model)):
+                cell_temp = tf.nn.rnn_cell.LSTMCell(self.n_hidden_temp, state_is_tuple=True)
+                outputs_temp, state_temp = tf.nn.dynamic_rnn(cell_temp, self.solar_temp, dtype=tf.float32)
 
-            # #concat two feature into a feature
-            # data_level2 = tf.concat(1, [outputs_solar, outputs_temp])
+            # concat two feature into a feature
+            data_level2 = tf.concat(1, [outputs_solar, outputs_temp])
 
-            # #2nd level lstm
-            # with tf.variable_scope("level2"):
-            #     cell_level2 = tf.nn.rnn_cell.LSTMCell(self.n_hidden_level2, state_is_tuple=True)
-            #     outputs, state_level2 = tf.nn.dynamic_rnn(cell_level2, data_level2, dtype=tf.float32)
-
-            with tf.variable_scope("solar_test"+str(self.n_model)):
+            #2nd level lstm
+            with tf.variable_scope("level2"+str(self.n_model)):
                 cell_level2 = tf.nn.rnn_cell.LSTMCell(self.n_hidden_level2, state_is_tuple=True)
-                outputs, state_level2 = tf.nn.dynamic_rnn(cell_level2, self.solar_data, dtype=tf.float32)
+                outputs, state_level2 = tf.nn.dynamic_rnn(cell_level2, data_level2, dtype=tf.float32)
+
+            # with tf.variable_scope("solar_test"+str(self.n_model)):
+            #     cell_level2 = tf.nn.rnn_cell.LSTMCell(self.n_hidden_level2, state_is_tuple=True)
+            #     outputs, state_level2 = tf.nn.dynamic_rnn(cell_level2, self.solar_data, dtype=tf.float32)
 
             #outputs: [batch_size, n_step, n_hidden] -->> [n_step, batch_size, n_hidden]
             #output: [batch_size, n_hidden]
             outputs = tf.transpose(outputs, [1, 0, 2])
             output = tf.gather(outputs, int(outputs.get_shape()[0]) - 1)
 
-            #regression
-            weight1 = tf.Variable(tf.truncated_normal([self.n_hidden_level2, 64]), dtype=tf.float32)
-            bias1 = tf.Variable(tf.constant(0.1, shape=[64]), dtype=tf.float32)
-            out1 = tf.nn.relu(tf.matmul(output, weight1) + bias1)
+            # regression
+            weight1 = tf.Variable(tf.truncated_normal([self.n_hidden_level2, 128]), dtype=tf.float32)
+            bias1 = tf.Variable(tf.constant(0.1, shape=[128]), dtype=tf.float32)
+            h_fc1 = tf.nn.relu(tf.matmul(output, weight1) + bias1)
 
-            weight2 = tf.Variable(tf.truncated_normal([64, 1]), dtype=tf.float32)
+            hfc1_drop = tf.nn.dropout(h_fc1, self.keep_prob)
+            weight2 = tf.Variable(tf.truncated_normal([128, 1]), dtype=tf.float32)
             bias2 = tf.Variable(tf.constant(0.1, shape=[1]), dtype=tf.float32)
-            self._prediction = tf.matmul(out1, weight2) + bias2
+
+            self._prediction = tf.matmul(hfc1_drop, weight2) + bias2
 
         return self._prediction
 
@@ -74,7 +80,7 @@ class SolarPredictionModel:
     def optimize(self):
     	# print "optimize"
         if self._optimize is None:
-            optimizer = tf.train.AdamOptimizer(0.0001)
+            optimizer = tf.train.AdamOptimizer(self.lr)
             self._optimize = optimizer.minimize(self.loss)
         return self._optimize
 
@@ -85,6 +91,11 @@ class SolarPredictionModel:
         if self._loss is None:
             self._loss = tf.reduce_mean(tf.square(self.prediction-self.target))
         return self._loss
+    def MAE(self):
+        if self._mae == None:
+            self._mae = tf.reduce_mean(tf.abs(self.prediction - self.target))
+        return self._mae
+
 
 
 def figurePlot(y_train, y_test, y_result, index):
@@ -95,9 +106,9 @@ def figurePlot(y_train, y_test, y_result, index):
     x_test = range(0, test_len)
 
     plt.figure(index)
-    plt.title("Solar Prediction")
-    plt.xlabel('Time/hour')
-    plt.ylabel('Avg Global CMP22 (vent/cor) [W/m^2]')
+    plt.title("Solar Irradiance Prediction with Deep Learning Model",fontsize=20)
+    plt.xlabel('Day',fontsize=15)
+    plt.ylabel('Avg Global CMP22 (vent/cor) [W/m^2]',fontsize=15)
 
     f1 = interpolate.interp1d(x_train+x_test, y_train+y_test, kind='cubic')
     xnew = np.arange(-train_len, test_len-1, 0.01)
@@ -131,15 +142,16 @@ def main(_):
     x_solar = []
     x_temp = []
     y_ = []
+    keep_prob = []
     for i in range(n_model):
         x_solar.append(tf.placeholder(tf.float32, [None, n_step, n_input_solar]))
         x_temp.append(tf.placeholder(tf.float32, [None, n_step, n_input_temp]))
         y_.append(tf.placeholder(tf.float32, [None, 1]))
-
+        keep_prob.append(tf.placeholder(tf.float32))
     reader = solar_prediction_reader.Reader(config.data_path, config)
     models = []
     for i in range(n_model):
-        models.append(SolarPredictionModel([x_solar[i], x_temp[i]], y_[i], config, i))
+        models.append(SolarPredictionModel([x_solar[i], x_temp[i]], y_[i], keep_prob[i], config, i))
 
     predictions = []
     losses = []
@@ -158,31 +170,29 @@ def main(_):
         #restore the model
         save_path = saver.restore(sess, config.model_path)
         
-        #train
         for i in range(epoch_size+1):
-            batch = reader.next_batch()
-            for j in range(n_model):
-                if i%print_step == 0:
-                    l = sess.run(losses[j], feed_dict={x_solar[j]:batch[0], x_temp[j]:batch[1], y_[j]:batch[2][j]})
-                    print "model", j, "training loss:", l
-
-                sess.run(optimizes[j], feed_dict={x_solar[j]:batch[0], x_temp[j]:batch[1], y_[j]:batch[2][j]})
-
-
+            
             # test
+            test_days = 5
             if i%config.test_step == 0:
                 test_results = []
-                solar_test_input, temp_test_input, test_targets = reader.get_test_set(5)
+                solar_test_input, temp_test_input, test_targets = reader.get_test_set(test_days)
                 for k in range(n_model):
-                    test_result = sess.run(predictions[k], feed_dict={x_solar[k]:solar_test_input, x_temp[k]:temp_test_input})
+                    test_result = sess.run(predictions[k], feed_dict={x_solar[k]:       solar_test_input, 
+                                                                        x_temp[k]:      temp_test_input,
+                                                                        keep_prob[k]:   1.0
+                                                                        })
                     test_results.append(test_result)
                 
                 test_target_all = []
                 test_result_all = []
 
-                for i in range(5):
+                for i in range(test_days):
                     test_target_all = test_target_all + test_targets[i]
                     test_result_all = test_result_all + list(zip(*test_results)[i])
+
+                for i in range(len(test_result_all)):
+                    print test_target_all[i], test_result_all[i]
 
                 #reshape the list by zip all value of the same target dimension into a tuple
                 #[test_size, n_target]
@@ -195,10 +205,44 @@ def main(_):
                 target_before_test_all = reader.get_target_before_test(120)
                 target_before_test_all = zip(*target_before_test_all)
 
+                #calculate the mse and mae
+                mse = 0
+                mae = 0
+                cnt = 0
+                for i in range(n_target):
+                    for j in range(len(test_target_all[i])):
+                        mse += (test_target_all[i][j] - test_result_all[i][j])**2
+                        mae += abs(test_target_all[i][j] - test_result_all[i][j])
+                        cnt = cnt + 1
+                print "Test MSE:", mse / cnt
+                print "Test MAE:", mae / cnt
+
+
                 #plot each target dimension result in a figure
                 #now the target is one  dim, so there is only one figure
                 for i in range(n_target):
                     figurePlot(list(target_before_test_all[i]), list(test_target_all[i]), list(test_result_all[i]), i)
+
+
+
+
+            #train
+            batch = reader.next_batch()
+            for j in range(n_model):
+                if i%print_step == 0:
+                    l = sess.run(losses[j], feed_dict={x_solar[j]:      batch[0], 
+                                                        x_temp[j]:      batch[1], 
+                                                        y_[j]:          batch[2][j],
+                                                        keep_prob[j]:   0.5
+                                                        })
+                    print "model", j, "training loss:", l
+
+                sess.run(optimizes[j], feed_dict={x_solar[j]:       batch[0], 
+                                                   x_temp[j]:       batch[1], 
+                                                   y_[j]:           batch[2][j],
+                                                   keep_prob[j]:    0.5 
+                                                   })
+
 
         #save the model
         save_path = saver.save(sess, config.model_path)
