@@ -9,7 +9,6 @@ import json
 from collections import namedtuple
 
 
-
 class SolarPredictionModel:
     def __init__(self, data, target, keep_prob, config, n_model):
         #load the 
@@ -65,12 +64,12 @@ class SolarPredictionModel:
             output = tf.gather(outputs, int(outputs.get_shape()[0]) - 1)
 
             # regression
-            weight1 = tf.Variable(tf.truncated_normal([self.n_hidden_level2, 128]), dtype=tf.float32)
-            bias1 = tf.Variable(tf.constant(0.1, shape=[128]), dtype=tf.float32)
+            weight1 = tf.Variable(tf.truncated_normal([self.n_hidden_level2, 256]), dtype=tf.float32)
+            bias1 = tf.Variable(tf.constant(0.1, shape=[256]), dtype=tf.float32)
             h_fc1 = tf.nn.relu(tf.matmul(output, weight1) + bias1)
 
             # h_fc1_drop = tf.nn.dropout(h_fc1, self.keep_prob)
-            weight2 = tf.Variable(tf.truncated_normal([128, 1]), dtype=tf.float32)
+            weight2 = tf.Variable(tf.truncated_normal([256, 1]), dtype=tf.float32)
             bias2 = tf.Variable(tf.constant(0.1, shape=[1]), dtype=tf.float32)
 
             self._prediction = tf.matmul(h_fc1, weight2) + bias2
@@ -178,7 +177,7 @@ def main(_):
         tf.initialize_all_variables().run()
 
         #restore the model
-        # save_path = saver.restore(sess, config.model_path)
+        save_path = saver.restore(sess, config.model_path)
         
         for i in range(epoch_size+1):
             
