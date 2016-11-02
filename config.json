@@ -25,21 +25,23 @@
     "group" : [
     ],
 
-    "batch_size" : 400,
-    "n_step" : 120,
+    "batch_size" : 100,
+    "n_step" : 72,
     "n_predict" : 1,
     "n_target" : 1,
+
+    "lr": 0.001,
 
     "data_length" : 14400,
     "data_step" : 24,
     "train_prop" : 0.8, 
-    "epoch_size" : 1000, 
+    "epoch_size" : 200, 
     "print_step" : 50, 
     "test_step" : 200, 
 
-    "n_hidden_solar" : 64, 
-    "n_hidden_temp" : 64, 
-    "n_hidden_level2" : 128, 
+    "n_hidden_solar" : 200, 
+    "n_hidden_temp" : 200, 
+    "n_hidden_level2" : 400, 
 
     "n_model" : 24,
 

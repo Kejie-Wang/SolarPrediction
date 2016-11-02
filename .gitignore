@@ -1,4 +1,5 @@
 *.pyc
 *.meta
 *.ckpt
+*.tar.gz
 src/checkpoint
