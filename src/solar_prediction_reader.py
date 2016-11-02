@@ -14,25 +14,6 @@ class Reader:
         data = zip(*data)
         return np.array(data)
 
-    # Compute the target pattern in the total dataset
-
-    # def _target_pattern(self, target_raw_data):
-    #     n_target = len(target_raw_data[0])
-    #     pattern = []
-    #     for i in range(hour_in_a_day):
-    #         pattern.append([0]*n_target)
-    #     num = [0]*hour_in_a_day
-    #     for i in range(len(target_raw_data)):
-    #         for j in range(len(target_raw_data[i])):
-    #             pattern[i%hour_in_a_day][j] += target_raw_data[i][j]
-    #         num[i%hour_in_a_day] += 1
-    #     for i in range(hour_in_a_day):
-    #         for j in range(n_target):
-    #             pattern[i][j] /= num[i]
-
-    #     return pattern
-
-
     def _target_patterns(self, target_raw_data, n_step):
         n_target = len(target_raw_data[0])
         hours = len(target_raw_data)
@@ -93,6 +74,7 @@ class Reader:
         self.data_step = config.data_step
         data_length = config.data_length
         train_prop = config.train_prop
+        validation_prop = config.validation_prop
         self.batch_size = config.batch_size
 
         #data preprocess
@@ -152,14 +134,16 @@ class Reader:
 
         #the num of batch in the train set
         self.train_batch_num = int(train_prop * len(self.solar_data)) // self.batch_size
-        print train_prop, len(self.solar_data), self.batch_size, self.train_batch_num
+        self.validation_num = int(validation_prop * len(self.solar_data))
         
         #the start of input and target the test set in the raw data
         #the feature of the test set just follow the end the train set
         #the target of the test set has a n_step gap after the test set start
         #Moreover, the input of the test set (feature) is increased by one
         #But the target is increased by data step
-        self.test_input_start = self.train_batch_num * self.batch_size + 53
+        self.validation_input_start = self.train_batch_num * self.batch_size
+        self.validation_target_start = self.validation_input_start*self.data_step + self.n_step
+        self.test_input_start = self.train_batch_num * self.batch_size + self.validation_num
         self.test_target_start = self.test_input_start*self.data_step + self.n_step
 
         print "*"*30, "dataset info", "*"*30
@@ -167,6 +151,7 @@ class Reader:
         print "batch size:", self.batch_size
         print "train batch number:", self.train_batch_num
         print "train length:", self.batch_size * self.train_batch_num
+        print "validation length", self.validation_num
         print "test input start:",self. test_input_start
         print "test target start:", self.test_target_start
 
@@ -201,6 +186,22 @@ class Reader:
 
         return [solar_data_batch, temp_data_batch, target_data_batch]
 
+    #The returned validataion and test set:
+    #solar_data and temp_data: [batch_size, n_step, n_input], batch_size = validation_num/test_num
+    #target_data: [batch_size, n_model], each of the target_data contains all model target in a tesor
+    def get_validation_set(self):
+        validation_targets = []
+        for i in range(validation_num):
+            validation_targets.append(self.target_data[self.validation_target_start+i*data_step:
+                                                      self,validation_target_start+i*data_step+self.n_model])
+
+        validation_targets = [list(x) for x in zip(*validation_targets)]
+        
+        return [self.solar_data[self.validation_input_start:self.validation_input_start+self.validation_num],
+                self.temp_data[self.validation_input_start:self.validation_input_start+self.validation_num],
+                validation_targets
+                ]
+
     def get_test_set(self, test_num):
         test_targets = []
         for i in range(test_num):
@@ -208,4 +209,5 @@ class Reader:
                                                     self.test_target_start+i*self.data_step+self.n_model])
         return [self.solar_data[self.test_input_start:self.test_input_start+test_num], 
                 self.temp_data[self.test_input_start:self.test_input_start+test_num], 
-                test_targets]
+                test_targets
+                ]
