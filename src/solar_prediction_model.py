@@ -29,6 +29,8 @@ class SolarPredictionModel:
 
         self.n_model = n_model
 
+        self.lr_set = False
+
 
     @property
     def prediction(self):
@@ -67,21 +69,22 @@ class SolarPredictionModel:
             bias1 = tf.Variable(tf.constant(0.1, shape=[128]), dtype=tf.float32)
             h_fc1 = tf.nn.relu(tf.matmul(output, weight1) + bias1)
 
-            hfc1_drop = tf.nn.dropout(h_fc1, self.keep_prob)
+            # h_fc1_drop = tf.nn.dropout(h_fc1, self.keep_prob)
             weight2 = tf.Variable(tf.truncated_normal([128, 1]), dtype=tf.float32)
             bias2 = tf.Variable(tf.constant(0.1, shape=[1]), dtype=tf.float32)
 
-            self._prediction = tf.matmul(hfc1_drop, weight2) + bias2
+            self._prediction = tf.matmul(h_fc1, weight2) + bias2
 
         return self._prediction
 
 
     @property
-    def optimize(self, lr_set=False):
-    	# print "optimize"
-        if (self._optimize is None) or lr_set:
-            if lr_set:
-                self.lr = self.lr / 10
+    def optimize(self):
+    	# print "optimize" 
+        if self._optimize is None or self.lr_set:
+            if self.lr_set:
+                self.lr /= 2
+                self.lr_set = False
             optimizer = tf.train.AdamOptimizer(self.lr)
             self._optimize = optimizer.minimize(self.loss)
         return self._optimize
@@ -236,20 +239,19 @@ def main(_):
 
 
             validation_set = reader.get_validation_set()
-
+            if sum(is_stop_training) <= 0:
+                print "STOP TRAINING"
+                break
             #train
             batch = reader.next_batch()
             for j in range(n_model):
-                if sum(is_stop_training) <= 0:
-                    print "STOP TRAINING"
-
-                if i%print_step == 0:
-                    train_loss = sess.run(losses[j], feed_dict={x_solar[j]:batch[0], 
-                                                        x_temp[j]:batch[1], 
-                                                        y_[j]:batch[2][j],
-                                                        keep_prob[j]:0.5
-                                                        })
-                    print "model", j, "training loss:", train_loss
+                # if i%print_step == 0:
+                #     train_loss = sess.run(losses[j], feed_dict={x_solar[j]:batch[0], 
+                #                                                 x_temp[j]:batch[1], 
+                #                                                 y_[j]:batch[2][j],
+                #                                                 keep_prob[j]:0.5
+                #                                                 })
+                #     print "model", j, "training loss:", train_loss
 
                 #model j has already stopped training
                 if(is_stop_training[j] <= 0):
@@ -260,15 +262,22 @@ def main(_):
                                                    keep_prob[j]:0.5 
                                                    })
                 validation_loss = sess.run(losses[j],feed_dict={x_solar[j]:validation_set[0], 
-                                                        x_temp[j]:validation_set[1], 
-                                                        y_[j]:validation_set[2][j],
-                                                        keep_prob[j]:1.0
-                                                        })
+                                                                x_temp[j]:validation_set[1], 
+                                                                y_[j]:validation_set[2][j],
+                                                                keep_prob[j]:1.0
+                                                                })
                 if(validation_loss < validation_last_loss[j]):
                     is_stop_training[j] = 3
+                    validation_last_loss[j] = validation_loss
                 else:
                     is_stop_training[j] -= 1
-                    validation_last_loss[j] = validation_loss
+                    models[j].lr_set = True
+                if i%print_step == 0:
+                    print "Model ", j, "validation loss: ", validation_loss
+
+        print "*"*50
+        for i in range(n_model):
+            print "Model ", i, "Validation loss: ", validation_last_loss[i]
 
         #save the model
         save_path = saver.save(sess, config.model_path)
