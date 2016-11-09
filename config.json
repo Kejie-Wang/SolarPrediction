@@ -30,9 +30,12 @@
     "n_predict" : 1,
     "n_target" : 1,
 
+    "lr": 0.005,
+
     "data_length" : 14400,
     "data_step" : 24,
     "train_prop" : 0.8, 
+    "validation_prop":0.1,
     "epoch_size" : 1000, 
     "print_step" : 50, 
     "test_step" : 200, 

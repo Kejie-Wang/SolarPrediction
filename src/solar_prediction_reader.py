@@ -147,7 +147,7 @@ class Reader:
         self.test_target_start = self.test_input_start*self.data_step + self.n_step
 
         print "*"*30, "dataset info", "*"*30
-        print "total data length:", len(self.solar_data)
+        print "total data length:", len(self.solar_data), len(self.target_data)
         print "batch size:", self.batch_size
         print "train batch number:", self.train_batch_num
         print "train length:", self.batch_size * self.train_batch_num
