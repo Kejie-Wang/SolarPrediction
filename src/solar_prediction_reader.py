@@ -191,9 +191,9 @@ class Reader:
     #target_data: [batch_size, n_model], each of the target_data contains all model target in a tesor
     def get_validation_set(self):
         validation_targets = []
-        for i in range(validation_num):
-            validation_targets.append(self.target_data[self.validation_target_start+i*data_step:
-                                                      self,validation_target_start+i*data_step+self.n_model])
+        for i in range(self.validation_num):
+            validation_targets.append(self.target_data[self.validation_target_start+i*self.data_step:
+                                                      self.validation_target_start+i*self.data_step+self.n_model])
 
         validation_targets = [list(x) for x in zip(*validation_targets)]
         

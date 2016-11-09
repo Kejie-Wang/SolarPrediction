@@ -1,6 +1,6 @@
 {
     "data_path" : "../dataset/solar_data.pkl", 
-        "input_group_temp": [
+    "input_group_temp": [
         "Avg Zenith Angle [degrees]",
         "Avg Azimuth Angle [degrees]",
         "Avg Airmass",
@@ -26,7 +26,7 @@
     ],
 
     "batch_size" : 400,
-    "n_step" : 120,
+    "n_step" : 72,
     "n_predict" : 1,
     "n_target" : 1,
 
@@ -35,14 +35,21 @@
     "data_length" : 14400,
     "data_step" : 24,
     "train_prop" : 0.8, 
+<<<<<<< HEAD
     "validation_prop":0.1,
     "epoch_size" : 1000, 
     "print_step" : 50, 
     "test_step" : 200, 
+=======
+    "validation_prop":0.1, 
+    "epoch_size" : 200, 
+    "print_step" : 25, 
+    "test_step" : 100, 
+>>>>>>> 5f6e134db9c45ada4a596eba079dd1f4892c8b23
 
-    "n_hidden_solar" : 64, 
-    "n_hidden_temp" : 64, 
-    "n_hidden_level2" : 128, 
+    "n_hidden_solar" : 100, 
+    "n_hidden_temp" : 100, 
+    "n_hidden_level2" : 200, 
 
     "n_model" : 24,
 
