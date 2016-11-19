@@ -20,7 +20,9 @@ Ubuntu 14.04
 Before run this project, make sure that you have installed all dependecy  
 - Download the ssrl sky image from the [**skycam**](https://www.nrel.gov/midc/skycam).  
 ***`# python dataset/SSRL_SKY_CAM_IMAGE_DATASET/ssrl_sky_image_spider_multi_thread.py`***
-- NREL solar and temperature data pre-process
+- NREL solar and temperature data pre-process  
+  
 ***`# python dataset/NREL_SOLAR_DATASET/nrel_solar_preprecess.py`***
-- Run the model
+  
+- Run the model  
  ***`# python src/solar_prediction_model.py`***
