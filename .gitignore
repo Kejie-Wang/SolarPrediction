@@ -3,3 +3,5 @@
 *.ckpt
 *.tar.gz
 src/checkpoint
+dataset/NREL_SOLAR_DATASET/*.csv
+dataset/NREL_SOLAR_DATASET/README
