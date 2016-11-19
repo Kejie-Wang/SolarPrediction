@@ -1,49 +1,34 @@
-
 from __future__ import division
 import numpy as np
 import pickle
 
-hour_in_a_day = 24
+HOUR_IN_A_DAY = 24
 
 class Reader:
+    def _feature_scale(self, features):
+        features_num = len(features)
+        for i in range(HOUR_IN_A_DAY):
+            index = np.arange(i, features_num, HOUR_IN_A_DAY)
+            mean = np.mean(features[index], axis=0)
+            stddev = np.std(features[index], axis=0)
+            features[index] = (features[index]-mean) / stddev
+        return features
 
-    def _data_reshape(self, input, groups, start, length):
-        data = []
-        for group_head in groups:
-            data.append(input[group_head][start:start+length])
-        data = zip(*data)
-        return np.array(data)
-
-    def _target_patterns(self, target_raw_data, n_step):
-        n_target = len(target_raw_data[0])
-        hours = len(target_raw_data)
-        days = hours // hour_in_a_day
-        feature_days = n_step // hour_in_a_day
-
-        patterns = []
+    def _feature_reshape(self, features, data_step, n_step):
+        features = self._feature_scale(features)
         
-        for d in range(days):
-            #the pattern of first n_step/hour_in_a_day is useless
-            #and there is no enough data to compute it
-            start = d - feature_days
-            if start < 0:
-                start = 0
-            pattern = []
-            for _ in range(hour_in_a_day):
-                pattern.append([0]*n_target)
-            for i in range(start, d):
-                for j in range(hour_in_a_day):
-                    for k in range(n_target):
-                        pattern[j][k] += target_raw_data[i*hour_in_a_day+j][k]
-            for j in range(hour_in_a_day):
-                for k in range(n_target):
-                    pattern[j][k] /= feature_days
-            patterns.append(pattern)
+        shape_features = []
+        for ptr in range(n_step, len(features), data_step):
+            shape_features.append(features[ptr - n_step:ptr])
+        return np.array(shape_features)
 
-        return patterns 
+    def _target_reshape(self, targets, data_step, n_step, n_target):
+        shape_targets = []
+        for ptr in range(n_step+n_target, len(targets), data_step):
+            shape_targets.append(targets[ptr - n_target:ptr])
+        return np.array(shape_targets)
 
-
-    def __init__(self, data_path, config):
+    def __init__(self, config):
         """
         Dataset sketch:
             The symbol '-' represents feature
@@ -59,108 +44,49 @@ class Reader:
         """
 
         #load data
-        pickle_input_data = open(data_path,'rb')
-        input_data_pd = pickle.load(pickle_input_data)
+        solar_train_data = np.loadtxt(config.solar_train_data_path, delimiter=',')
+        solar_validation_data = np.loadtxt(config.solar_validation_data_path, delimiter=',')
+        solar_test_data = np.loadtxt(config.solar_test_data_path, delimiter=',')
 
-        input_data_pd['Avg Airmass'] = input_data_pd['Avg Airmass'].replace(-1.0, 0.0)
-        input_data_pd['Avg Total Cloud Cover [%]'] = input_data_pd['Avg Total Cloud Cover [%]'].replace(-1.0, 0.0)
-        input_data_pd['Avg Opaque Cloud Cover [%]'] = input_data_pd['Avg Opaque Cloud Cover [%]'].replace(-1.0, 0.0)
+        temp_train_data = np.loadtxt(config.temp_train_data_path, delimiter=',')
+        temp_validation_data = np.loadtxt(config.temp_validation_data_path, delimiter=',')
+        temp_test_data = np.loadtxt(config.temp_test_data_path, delimiter=',')
+
+        target_train_data = np.loadtxt(config.target_train_data_path, delimiter=',')
+        target_validation_data = np.loadtxt(config.target_validation_data_path, delimiter=',')      
+        target_test_data = np.loadtxt(config.target_test_data_path, delimiter=',')
 
         #feature scale
+        #scale to the mean is zero and stddev is 1.0
+        self.solar_train_data = self._feature_reshape(solar_train_data, config.data_step, config.n_step)
+        self.solar_validation_data = self._feature_reshape(solar_validation_data, config.data_step, config.n_step)
+        self.solar_test_data = self._feature_reshape(solar_test_data, config.data_step, config.n_step)
         
-        #load config
-        self.n_step = config.n_step
-        self.n_model = config.n_model
-        self.data_step = config.data_step
-        data_length = config.data_length
-        train_prop = config.train_prop
-        validation_prop = config.validation_prop
+        self.temp_train_data = self._feature_reshape(temp_train_data, config.data_step, config.n_step)
+        self.temp_validation_data = self._feature_reshape(temp_validation_data, config.data_step, config.n_step)
+        self.temp_test_data = self._feature_reshape(temp_test_data, config.data_step, config.n_step)
+
+        self.target_train_data = self._target_reshape(target_train_data, config.data_step, config.n_step, config.n_target)
+        self.target_validation_data = self._target_reshape(temp_validation_data, config.data_step, config.n_step, config.n_target)
+        self.target_test_data = self._target_reshape(temp_test_data, config.data_step, config.n_step, config.n_target)
+
+        #CAUTIOUS: the length of the solar_tarin_data and target_train_data may be differnet
+        #the length of temp_test_data may be more short
+        #and thus we must use the target data to compute the number
+        self.train_num = len(self.target_train_data)
+        self.validataion_num = len(self.target_test_data)
+        self.test_num = len(self.target_test_data)
+
         self.batch_size = config.batch_size
 
-        #data preprocess
-        input_group_solar = config.input_group_solar
-        input_group_temp = config.input_group_temp
-        target_group = config.target_group
-
-        # target_raw_data = input_data_pd['Avg Global CMP22 (vent/cor) [W/m^2]']
-        # pattern = self._target_patten(target_raw_data)
-        # target_raw_data = [target_raw_data[i] - pattern[i%24] for i in range(len(target_raw_data))]
-        # target_raw_data = target_raw_data[self.n_step+n_predict-1:self.n_step+n_predict-1+data_length]
-        # target_raw_data = zip(*[target_raw_data])
-        # print pattern, len(pattern)
-        #target_raw_data = self._data_reshape(input_data_pd, target_group, self.n_step+n_predict-1, data_length)
-        
-
-        #select the data and reshape the data
-        target_raw_data = self._data_reshape(input_data_pd, target_group, 0, len(input_data_pd))
-
-        #feature scale
-        #feature scale after getting the target data
-        #the target data do NOT need to be scaled
-        input_data_pd = (input_data_pd - input_data_pd.mean()) / input_data_pd.std()
-        solar_raw_data = self._data_reshape(input_data_pd, input_group_solar, 0, data_length)
-        temp_raw_data = self._data_reshape(input_data_pd, input_group_temp, 0, data_length)
-
-        #get the target pattern
-        self.patterns = self._target_patterns(target_raw_data, self.n_step)
-
-        print self.patterns[400]
-
-        self.solar_data = []
-        self.temp_data = []
-        self.target_data = []   
-        #minus the pattern from the raw data
-        n_target = len(target_raw_data[0])
-        for i in range(len(target_raw_data)):
-            day = i // hour_in_a_day
-            hour = i % hour_in_a_day
-            tmp = []
-            for j in range(n_target):
-                tmp.append(target_raw_data[i][j]) #- (self.patterns[day][hour][j])
-            self.target_data.append(tmp)
-        
-        #get the solar and temp data by organizing the raw data with the time step
-        #unit the n_step data point into a vector
-        ptr = 0
-        while ptr + self.n_step <= data_length:
-            self.solar_data.append(solar_raw_data[ptr:ptr+self.n_step])
-            self.temp_data.append(temp_raw_data[ptr:ptr+self.n_step])
-            ptr += self.data_step
-
-        #record the current batch index
-        #used by the next batch function
-        #increase one when read a batch for the reader
-        self.batch_index = 0
-
-        #the num of batch in the train set
-        self.train_batch_num = int(train_prop * len(self.solar_data)) // self.batch_size
-        self.validation_num = int(validation_prop * len(self.solar_data))
-        
-        #the start of input and target the test set in the raw data
-        #the feature of the test set just follow the end the train set
-        #the target of the test set has a n_step gap after the test set start
-        #Moreover, the input of the test set (feature) is increased by one
-        #But the target is increased by data step
-        self.validation_input_start = self.train_batch_num * self.batch_size
-        self.validation_target_start = self.validation_input_start*self.data_step + self.n_step
-        self.test_input_start = self.train_batch_num * self.batch_size + self.validation_num
-        self.test_target_start = self.test_input_start*self.data_step + self.n_step
-
-        print "*"*30, "dataset info", "*"*30
-        print "total data length:", len(self.solar_data), len(self.target_data)
+        print "Dataset info"
+        print "="*80
+        print "train number:", self.train_num
+        print "validation number:", self.validataion_num
+        print "test number", self.test_num
         print "batch size:", self.batch_size
-        print "train batch number:", self.train_batch_num
-        print "train length:", self.batch_size * self.train_batch_num
-        print "validation length", self.validation_num
-        print "test input start:",self. test_input_start
-        print "test target start:", self.test_target_start
-
-    def get_pattern(self, day):
-        return self.patterns[day]
-
-
-    def get_target_before_test(self, hours):
-        return self.target_data[self.test_target_start-hours:self.test_target_start]
+        print "use ", config.n_step, "hours to preidict the next ", config.n_target, " consecutive hours"
+        print "\n\n"
 
     def next_batch(self):
         """return a batch of train and target data
@@ -168,46 +94,21 @@ class Reader:
         @return temp_data_batch:  [batch_size, n_step, n_input]
         @return target_data_batch: [n_model, batch_size, n_target], now n_target = 1 and not configurable
         """
-        start = self.batch_index * self.batch_size
-        end = (self.batch_index + 1) * self.batch_size 
-        solar_data_batch = np.array(self.solar_data[start : end])
-        temp_data_batch = np.array(self.temp_data[start : end])
+        index = np.random.random_integers(0, self.train_num-1, size=(self.batch_size))
+        print index
+        solar_batch_data = self.solar_train_data[index]
+        temp_batch_data = self.temp_train_data[index]
+        target_batch_data = self.target_train_data[index]
 
-        target_data_batch = []
-        for i in range(self.n_model):
-            ptr = start*self.data_step + self.n_step + i
-            tmp = []
-            for j in range(self.batch_size):
-                tmp.append(self.target_data[ptr])
-                ptr += self.data_step
-            target_data_batch.append(np.array(tmp))
-        
-        self.batch_index = (self.batch_index + 1)%self.train_batch_num
+        return solar_batch_data, temp_batch_data, target_batch_data
 
-        return [solar_data_batch, temp_data_batch, target_data_batch]
 
     #The returned validataion and test set:
     #solar_data and temp_data: [batch_size, n_step, n_input], batch_size = validation_num/test_num
     #target_data: [batch_size, n_model], each of the target_data contains all model target in a tesor
     def get_validation_set(self):
-        validation_targets = []
-        for i in range(self.validation_num):
-            validation_targets.append(self.target_data[self.validation_target_start+i*self.data_step:
-                                                      self.validation_target_start+i*self.data_step+self.n_model])
+        return self.solar_validation_data, temp_validation_data, target_validation_data
 
-        validation_targets = [list(x) for x in zip(*validation_targets)]
-        
-        return [self.solar_data[self.validation_input_start:self.validation_input_start+self.validation_num],
-                self.temp_data[self.validation_input_start:self.validation_input_start+self.validation_num],
-                validation_targets
-                ]
 
     def get_test_set(self, test_num):
-        test_targets = []
-        for i in range(test_num):
-            test_targets.append(self.target_data[self.test_target_start+i*self.data_step: 
-                                                    self.test_target_start+i*self.data_step+self.n_model])
-        return [self.solar_data[self.test_input_start:self.test_input_start+test_num], 
-                self.temp_data[self.test_input_start:self.test_input_start+test_num], 
-                test_targets
-                ]
+        return self.solar_test_data, temp_test_data, target_test_data
