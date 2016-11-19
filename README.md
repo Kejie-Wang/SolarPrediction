@@ -18,8 +18,9 @@ Ubuntu 14.04
 
 ## How To Run
 Before run this project, make sure that you have installed all dependecy  
-For the image dataset is too large, it is not in the project and you can use the python script in dataset/SSRL_SKY_CAM_IMAGE_DATASET/ssrl_sky_image_spider_multi_thread.py to spider the source image from the [**skycam**](https://www.nrel.gov/midc/skycam). This may cost several minutes to finish.  
-`# python dataset/SSRL_SKY_CAM_IMAGE_DATASET/ssrl_sky_image_spider_multi_thread.py`
-  
-The nrel solar and temperature dataset is in the NREL_SOLAR_DATASET and the you must first run the pre-process python script to generate the csv file.  
-`# python dataset/NREL_SOLAR_DATASET/nrel_solar_preprecess.py`
+- Download the ssrl sky image from the [**skycam**](https://www.nrel.gov/midc/skycam).  
+***`# python dataset/SSRL_SKY_CAM_IMAGE_DATASET/ssrl_sky_image_spider_multi_thread.py`***
+- NREL solar and temperature data pre-process
+***`# python dataset/NREL_SOLAR_DATASET/nrel_solar_preprecess.py`***
+- Run the model
+ ***`# python src/solar_prediction_model.py`***
