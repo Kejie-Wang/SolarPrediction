@@ -1,6 +1,7 @@
+# -*- coding: utf-8 -*-
+
 from __future__ import division
 import numpy as np
-import pickle
 
 HOUR_IN_A_DAY = 24
 
@@ -30,55 +31,48 @@ class Reader:
 
     def __init__(self, config):
         """
-        Dataset sketch:
-            The symbol '-' represents feature
-            The symbol '*' represents target
-            ---------------------*******
-            ############--------------------*******
-                        ############---------------------*******
-                                    ############---------------------*******
-            It show four pairs of (feature, target)
-            The length of the '-' is n_step
-            The length of the '#' is data step
-            The length of the '*' is the model number
         """
 
         #load data
-        solar_train_data = np.loadtxt(config.solar_train_data_path, delimiter=',')
-        solar_validation_data = np.loadtxt(config.solar_validation_data_path, delimiter=',')
-        solar_test_data = np.loadtxt(config.solar_test_data_path, delimiter=',')
+        solar_train_raw_data = np.loadtxt(config.solar_train_data_path, delimiter=',', ndmin=2)
+        solar_validation_raw_data = np.loadtxt(config.solar_validation_data_path, delimiter=',', ndmin=2)
+        solar_test_raw_data = np.loadtxt(config.solar_test_data_path, delimiter=',', ndmin=2)
 
-        temp_train_data = np.loadtxt(config.temp_train_data_path, delimiter=',')
-        temp_validation_data = np.loadtxt(config.temp_validation_data_path, delimiter=',')
-        temp_test_data = np.loadtxt(config.temp_test_data_path, delimiter=',')
+        temp_train_raw_data = np.loadtxt(config.temp_train_data_path, delimiter=',', ndmin=2)
+        temp_validation_raw_data = np.loadtxt(config.temp_validation_data_path, delimiter=',', ndmin=2)
+        temp_test_raw_data = np.loadtxt(config.temp_test_data_path, delimiter=',', ndmin=2)
 
-        target_train_data = np.loadtxt(config.target_train_data_path, delimiter=',')
-        target_validation_data = np.loadtxt(config.target_validation_data_path, delimiter=',')      
-        target_test_data = np.loadtxt(config.target_test_data_path, delimiter=',')
+        target_train_raw_data = np.loadtxt(config.target_train_data_path, delimiter=',')
+        target_validation_raw_data = np.loadtxt(config.target_validation_data_path, delimiter=',')      
+        target_test_raw_data = np.loadtxt(config.target_test_data_path, delimiter=',')
 
-        #feature scale
-        #scale to the mean is zero and stddev is 1.0
-        self.solar_train_data = self._feature_reshape(solar_train_data, config.data_step, config.n_step)
-        self.solar_validation_data = self._feature_reshape(solar_validation_data, config.data_step, config.n_step)
-        self.solar_test_data = self._feature_reshape(solar_test_data, config.data_step, config.n_step)
+        #feature scale and reshape
+        #feature scale: scale to the mean is zero and stddev is 1.0
+        #feature reshape: accumulate several(n_step) features into a new feature for the input the lstm
+        #target reshape: align the target with the input feature
+        self.solar_train_data = self._feature_reshape(solar_train_raw_data, config.data_step, config.n_step)
+        self.solar_validation_data = self._feature_reshape(solar_validation_raw_data, config.data_step, config.n_step)
+        self.solar_test_data = self._feature_reshape(solar_test_raw_data, config.data_step, config.n_step)
         
-        self.temp_train_data = self._feature_reshape(temp_train_data, config.data_step, config.n_step)
-        self.temp_validation_data = self._feature_reshape(temp_validation_data, config.data_step, config.n_step)
-        self.temp_test_data = self._feature_reshape(temp_test_data, config.data_step, config.n_step)
+        self.temp_train_data = self._feature_reshape(temp_train_raw_data, config.data_step, config.n_step)
+        self.temp_validation_data = self._feature_reshape(temp_validation_raw_data, config.data_step, config.n_step)
+        self.temp_test_data = self._feature_reshape(temp_test_raw_data, config.data_step, config.n_step)
 
-        self.target_train_data = self._target_reshape(target_train_data, config.data_step, config.n_step, config.n_target)
-        self.target_validation_data = self._target_reshape(temp_validation_data, config.data_step, config.n_step, config.n_target)
-        self.target_test_data = self._target_reshape(temp_test_data, config.data_step, config.n_step, config.n_target)
+        self.target_train_data = self._target_reshape(target_train_raw_data, config.data_step, config.n_step, config.n_target)
+        self.target_validation_data = self._target_reshape(target_validation_raw_data, config.data_step, config.n_step, config.n_target)
+        self.target_test_data = self._target_reshape(target_test_raw_data, config.data_step, config.n_step, config.n_target)
 
         #CAUTIOUS: the length of the solar_tarin_data and target_train_data may be differnet
         #the length of temp_test_data may be more short
         #and thus we must use the target data to compute the number
         self.train_num = len(self.target_train_data)
-        self.validataion_num = len(self.target_test_data)
+        self.validataion_num = len(self.target_validation_data)
         self.test_num = len(self.target_test_data)
 
         self.batch_size = config.batch_size
 
+
+        #print the dataset info
         print "Dataset info"
         print "="*80
         print "train number:", self.train_num
@@ -92,10 +86,9 @@ class Reader:
         """return a batch of train and target data
         @return solar_data_batch: [batch_size, n_step, n_input]
         @return temp_data_batch:  [batch_size, n_step, n_input]
-        @return target_data_batch: [n_model, batch_size, n_target], now n_target = 1 and not configurable
+        @return target_data_batch: [n_model, batch_size, n_target]
         """
         index = np.random.random_integers(0, self.train_num-1, size=(self.batch_size))
-        print index
         solar_batch_data = self.solar_train_data[index]
         temp_batch_data = self.temp_train_data[index]
         target_batch_data = self.target_train_data[index]
@@ -107,8 +100,12 @@ class Reader:
     #solar_data and temp_data: [batch_size, n_step, n_input], batch_size = validation_num/test_num
     #target_data: [batch_size, n_model], each of the target_data contains all model target in a tesor
     def get_validation_set(self):
-        return self.solar_validation_data, temp_validation_data, target_validation_data
+        return self.solar_validation_data[0:self.validataion_num], \
+                self.temp_validation_data[0:self.validataion_num], \
+                self.target_validation_data[0:self.validataion_num]
 
 
     def get_test_set(self, test_num):
-        return self.solar_test_data, temp_test_data, target_test_data
+        return self.solar_test_data[0:test_num], \
+                self.temp_test_data[0:test_num], \
+                self.target_test_data[0:test_num]
