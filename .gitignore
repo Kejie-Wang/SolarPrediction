@@ -3,5 +3,8 @@
 *.ckpt
 *.tar.gz
 src/checkpoint
+src/reader_test.py
 dataset/NREL_SOLAR_DATASET/*.csv
 dataset/NREL_SOLAR_DATASET/README
+dataset/SSRL_SKY_CAM_IMAGE_DATASET/SSRL_SKY_CAM_IMAGE/
+dataset/SSRL_SKY_CAM_IMAGE_DATASET/SSRL_SKY_CAM_IMAGE.rar
