@@ -35,11 +35,13 @@
     "temp_test_data_path" : "../dataset/NREL_SOLAR_DATASET/NREL_Temp_Test_Data.csv", 
     "target_test_data_path" : "../dataset/NREL_SOLAR_DATASET/NREL_Target_Test_Data.csv", 
 
-    "batch_size" : 400,
+    "batch_size" : 100,
     "n_step" : 24,
     "n_predict" : 1,
     "n_target" : 24,
 
+    "epsilon" : 5,
+    "C": 2,
     "lr": 0.005,
 
     "data_length" : 14400,
@@ -51,7 +53,10 @@
 
     "n_hidden_solar" : 100, 
     "n_hidden_temp" : 100, 
-    "n_hidden_level2" : 200, 
+    "n_hidden_level2" : 200,
+    "n_fully_connect_hidden": 128,
+
+    "test_num" : 5, 
 
     "model_path" : "model.ckpt"
 }
