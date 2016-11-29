@@ -7,7 +7,7 @@ import numpy as np
 import json
 from collections import namedtuple
 from model import Model
-from util import MSE_And_MAE
+from util import MSE_And_MAE, test_figure_plot
 import solar_prediction_reader
 
 def main(_):
@@ -46,9 +46,10 @@ def main(_):
     validation_last_loss = float('inf')
 
     with tf.Session() as sess:
+        # initialize all variables
         tf.initialize_all_variables().run()
     
-        for i in range(epoch_size+1):         
+        for i in range(epoch_size+1):
             # test
             if i%config.test_step == 0:
                 solar_test_input, temp_test_input, test_target = reader.get_test_set(test_num)
@@ -60,12 +61,13 @@ def main(_):
                 print "Test MSE: ", mse
                 print "Test MAE: ", mae
 
+                # test_figure_plot(test_target, test_result)
+
             #train
             batch = reader.next_batch()
             train_feed = {x_solar:batch[0], x_temp:batch[1], y_:batch[2],keep_prob:0.5}
             sess.run(optimize, feed_dict=train_feed)
-            print sess.run(loss, feed_dict=train_feed)
-            
+            print "train loss:",sess.run(loss, feed_dict=train_feed)
 
             #validation
             validation_set = reader.get_validation_set()
@@ -76,9 +78,10 @@ def main(_):
             if(validation_loss < validation_last_loss):
                 validation_last_loss = validation_loss
             else:
-                break
+                # break
+                print "break"
 
-            # print "validation loss: ", validation_loss
+            print "validation loss: ", validation_loss
 
 if __name__ == "__main__":
     tf.app.run()

@@ -16,7 +16,7 @@ class Reader:
         return features
 
     def _feature_reshape(self, features, data_step, n_step):
-        features = self._feature_scale(features)
+        # features = self._feature_scale(features)
         
         shape_features = []
         for ptr in range(n_step, len(features), data_step):
@@ -71,7 +71,7 @@ class Reader:
 
         self.batch_size = config.batch_size
 
-
+        # self.index = np.random.random_integers(0, self.train_num-1, size=(self.batch_size))
         #print the dataset info
         print "Dataset info"
         print "="*80
@@ -79,7 +79,7 @@ class Reader:
         print "validation number:", self.validataion_num
         print "test number", self.test_num
         print "batch size:", self.batch_size
-        print "use ", config.n_step, "hours to preidict the next ", config.n_target, " consecutive hours"
+        print "use ", config.n_step, "hours to predict the next ", config.n_target, " consecutive hours"
         print "\n\n"
 
     def next_batch(self):
