@@ -14,6 +14,14 @@ def MSE_And_MAE(targets, results):
     return mse, mae
 
 
+def test_figure_plot(targets, results):
+	targets = np.reshape(targets, targets.size)
+	results = np.reshape(results, results.size)
+
+	plt.figure()
+	plt.plot(targets, color='blue')
+	plt.plot(results, color='red')
+	plt.show()
 # def figurePlot(y_train, y_test, y_result, index):
 #     train_len = len(y_train)
 #     test_len = len(y_test)
