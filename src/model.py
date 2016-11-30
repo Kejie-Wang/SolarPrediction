@@ -5,7 +5,7 @@ __date__ = '12/10/2016'
 import tensorflow as tf
 
 class Model:
-    def __init__(self, data, target, keep_prob, config, model_label):
+    def __init__(self, data, target, keep_prob, config):
         #load the config
         #the input data
         self.solar_data = data[0]
@@ -27,24 +27,21 @@ class Model:
         self.epsilon = config.epsilon
         self.C = config.C
 
-        self.model_label = str(model_label)
-
         self._prediction = None
         self._optimize = None
         self._loss = None
 
     @property
     def prediction(self):
-        if self._prediction is None: 
-
+        if self._prediction is None:
             # build the graph
             # solar rnn lstm
-            with tf.variable_scope("solar_level1" + self.model_label):
+            with tf.variable_scope("solar_level1"):
                 cell_solar = tf.nn.rnn_cell.LSTMCell(self.n_hidden_solar, state_is_tuple=True)
                 outputs_solar, state_solar = tf.nn.dynamic_rnn(cell_solar, self.solar_data, dtype=tf.float32)
 
             # temp rnn lstm
-            with tf.variable_scope("temp_level1" + self.model_label):
+            with tf.variable_scope("temp_level1"):
                 cell_temp = tf.nn.rnn_cell.LSTMCell(self.n_hidden_temp, state_is_tuple=True)
                 outputs_temp, state_temp = tf.nn.dynamic_rnn(cell_temp, self.temp_data, dtype=tf.float32)
 
@@ -52,7 +49,7 @@ class Model:
             data_level2 = tf.concat(1, [outputs_solar, outputs_temp])
 
             #2nd level lstm
-            with tf.variable_scope("level2" + self.model_label):
+            with tf.variable_scope("level2"):
                 cell_level2 = tf.nn.rnn_cell.LSTMCell(self.n_hidden_level2, state_is_tuple=True)
                 outputs, state_level2 = tf.nn.dynamic_rnn(cell_level2, data_level2, dtype=tf.float32)
 
@@ -68,6 +65,7 @@ class Model:
 
             # h_fc_drop = tf.nn.dropout(h_fc1, self.keep_prob)
 
+            #multi-support vector regresiion
             self.weight = tf.Variable(tf.truncated_normal([self.n_fully_connect_hidden, self.n_target]), dtype=tf.float32)
             bias = tf.Variable(tf.constant(0.1, shape=[self.n_target]), dtype=tf.float32)
 
@@ -78,17 +76,20 @@ class Model:
     @property
     def loss(self):
         if self._loss is None:
+            #compute the ||w||2
+            #use the w^T * W to compute and the sum the diag to get the result
             m = tf.matmul(tf.transpose(self.weight,[1,0]), self.weight)
             diag = tf.matrix_diag_part(m)
             w_sqrt_sum = tf.reduce_sum(diag)
 
+            #the loss of the trian set
             diff = self.prediction - self.target
             err = tf.sqrt(tf.reduce_sum(tf.square(diff), reduction_indices=1)) - self.epsilon
             err_greater_than_espilon = tf.cast(err > 0, tf.float32)
             total_err = tf.reduce_sum(tf.mul(tf.square(err), err_greater_than_espilon))
 
-            #self._loss = 0.5 * w_sqrt_sum + self.C * total_err
-            self._loss = self.C * total_err
+            # self._loss = 0.5 * w_sqrt_sum + self.C * total_err
+            self._loss = total_err
         return self._loss
 
 

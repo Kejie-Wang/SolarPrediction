@@ -6,9 +6,9 @@ import tensorflow as tf
 import numpy as np
 import json
 from collections import namedtuple
+from solar_prediction_reader import Reader
 from model import Model
 from util import MSE_And_MAE, test_figure_plot
-import solar_prediction_reader
 
 def main(_):
     #get the config
@@ -20,7 +20,7 @@ def main(_):
     n_target = config.n_target
     n_input_solar = len(config.input_group_solar)
     n_input_temp = len(config.input_group_temp)
-    
+
     epoch_size = config.epoch_size
     print_step = config.print_step
 
@@ -32,9 +32,9 @@ def main(_):
     y_ = tf.placeholder(tf.float32, [None, n_target])
     keep_prob = tf.placeholder(tf.float32)
 
-    reader = solar_prediction_reader.Reader(config)
-    
-    model = Model([x_solar, x_temp], y_, keep_prob, config)
+    reader = Reader(config)
+
+    model = Model([x_solar, x_temp], y_, keep_prob, config, 0)
 
     prediction = model.prediction
     loss = model.loss
@@ -48,7 +48,7 @@ def main(_):
     with tf.Session() as sess:
         # initialize all variables
         tf.initialize_all_variables().run()
-    
+
         for i in range(epoch_size+1):
             # test
             if i%config.test_step == 0:
@@ -61,13 +61,22 @@ def main(_):
                 print "Test MSE: ", mse
                 print "Test MAE: ", mae
 
+                solar_train_input, temp_train_input, train_target = reader.next_batch()
+                train_feed = {x_solar: solar_train_input, x_temp:temp_train_input,keep_prob:1.0}
+                train_result = sess.run(prediction, feed_dict=train_feed)
+                mse, mae = MSE_And_MAE(train_target, train_result)
+                print "Train MSE: ", mse
+                print "Train MAE: ", mae
+                
                 # test_figure_plot(test_target, test_result)
 
             #train
             batch = reader.next_batch()
             train_feed = {x_solar:batch[0], x_temp:batch[1], y_:batch[2],keep_prob:0.5}
             sess.run(optimize, feed_dict=train_feed)
-            print "train loss:",sess.run(loss, feed_dict=train_feed)
+            if i%20 == 0:
+                print "train loss:",sess.run(loss, feed_dict=train_feed)
+                print "validation loss: ", validation_last_loss
 
             #validation
             validation_set = reader.get_validation_set()
@@ -77,11 +86,11 @@ def main(_):
             #compare the validation with the last loss
             if(validation_loss < validation_last_loss):
                 validation_last_loss = validation_loss
-            else:
-                # break
-                print "break"
+            # else:
+            #     # break
+            #     print "break"
 
-            print "validation loss: ", validation_loss
+            # print "validation loss: ", validation_loss
 
 if __name__ == "__main__":
     tf.app.run()
