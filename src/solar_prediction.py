@@ -34,7 +34,7 @@ def main(_):
 
     reader = Reader(config)
 
-    model = Model([x_solar, x_temp], y_, keep_prob, config, 0)
+    model = Model([x_solar, x_temp], y_, keep_prob, config)
 
     prediction = model.prediction
     loss = model.loss
@@ -67,7 +67,7 @@ def main(_):
                 mse, mae = MSE_And_MAE(train_target, train_result)
                 print "Train MSE: ", mse
                 print "Train MAE: ", mae
-                
+
                 # test_figure_plot(test_target, test_result)
 
             #train
