@@ -1,0 +1,111 @@
+Global CMP22 (vent/corr.)
+Global CMP22-1 (corr.)
+Global CMP22-2 (corr.)
+Global CMP11 (corr.)
+Global CM6b (corr.)
+Global CM3 (corr.)
+Global SR25
+Global MS-802 (corr.)
+Global MS-410 (corr.)
+Global MS-602 (corr.)
+Global SPP (vent/corr.)
+Global PSP (vent/corr.)
+Global GPP (corr.)
+Global TSP-700
+Global SPN1
+Global SP Lite2
+Global ML-01
+Global LI-200R
+Global LI-200
+Global SP-110
+Global Extraterrestrial (calc.)
+Global RG780 PSP
+Global UV-Total CUV4
+Global UV-Total TUVR
+Global UVA UV-S-A-T
+Global UVA CUVA1
+Global UVB UV-S-B-T
+Global UVB CUVB1
+Global UVB MS210W
+Global UVB UVB-1
+Global UVB 501A
+Global UVE 501A (MED/hr)
+Global UVE 501A (Index)
+Global UVE 501A (MED)
+Global Quantum PQS-1
+Global Quantum LI-190
+Global Photometric LI-210
+Global 40-South CMP11
+Global 40-South LI-200
+Global 90-North PSP
+Global 90-North LI-200
+Global 90-East PSP
+Global 90-East LI-200
+Global 90-South PSP
+Global 90-South LI-200
+Global 90-West PSP
+Global 90-West LI-200
+Global Normal CMP11
+Global SE-POA LI-200
+Direct CHP1-1
+Direct CHP1-2
+Direct sNIP
+Direct NIP
+Direct DR02 (corr.)
+Direct MS-56
+Direct LI-201
+Direct Extraterrestrial (calc.)
+Direct RG780 NIP
+Direct UV-Total
+Direct UV-Total TUVR
+Direct UVA CUVA2
+Direct UVB CUVB2
+Direct Quantum LI-190
+Diffuse 8-48 (vent.)
+Diffuse CM22-1 (vent/corr.)
+Diffuse CM22-2 (vent/corr.)
+Diffuse CMP11 (corr.)
+Diffuse PSP (sband corr.)
+Diffuse SPN1
+Downwelling Infrared PIR (vent.)
+Downwelling Infrared CG4 (vent.)
+Upwelling Infrared PIR
+Upwelling Infrared CG3
+Upwelling Shortwave CM21
+Upwelling Shortwave CM3
+Upwelling Shortwave LI-200
+Upwelling Quantum LI-190
+Net Infrared PIRs (atmos.)
+Net Infrared K&Zs (atmos.)
+Net Radiation
+Effective Net (Eppley vent)
+Effective Net (K&Z vent)
+Effective Net (K&Z)
+Instrument Net DW PIR
+Instrument Net DW CG4
+Instrument Net UW PIR
+Instrument Net UW CG3
+Photometer TWC (500nm)
+Photometer POM-01 (315nm)
+Photometer POM-01 (400nm)
+Photometer POM-01 (500nm)
+Photometer POM-01 (675nm)
+Photometer POM-01 (870nm)
+Photometer POM-01 (940nm)
+Photometer POM-01 (1020nm)
+Signal CMP22-V (global)
+Signal CMP22-1 (global)
+Signal CMP22-2 (global)
+Signal CM22-1 (diffuse)
+Signal CM22-2 (diffuse)
+Signal CMP11 (global)
+Signal CMP11 (diffuse)
+Signal CM6b
+Signal CM3
+Signal MS-802
+Signal MS-410
+Signal MS-602
+Signal SPP (global)
+Signal PSP (global)
+Signal GPP (global)
+Signal DR02 (direct)

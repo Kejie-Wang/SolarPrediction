@@ -1,0 +1,91 @@
+Zenith Angle
+Azimuth Angle
+Airmass
+Dry Bulb Temperature (Tower)
+Dry Bulb Temperature (Deck)
+Dry Bulb Temperature (SE)
+Dry Bulb Temperature (Data lab)
+Wet Bulb Temperature (Tower)
+Dew Point Temperature (Tower)
+Wind Chill Temperature (Tower)
+Wind Chill Temperature (Deck)
+Relative Humidity (Tower)
+Relative Humidity (Deck)
+Relative Humidity (SE)
+Relative Humidity (Data lab)
+Cloud Cover (Total)
+Cloud Cover (Opaque)
+Wind Speed @ 6ft
+Wind Speed @ 19ft
+Wind Speed @ 22ft
+Wind Speed @ 42ft
+Wind Speed @ 6ft (Peak)
+Wind Speed @ 19ft (Peak)
+Wind Speed @ 22ft (Peak)
+Wind Speed @ 42ft (Peak)
+Wind Direction @ 6ft
+Wind Direction @ 19ft
+Wind Direction @ 22ft
+Wind Direction @ 42ft
+Vertical Wind Shear
+Station Pressure
+Est. Sea-Level Pressure
+Atmospheric Electric Field
+Precipitation
+Precipitation (Accumulated)
+Snow Depth
+AOD TWC (500nm)
+AOD Estimated (500nm)
+AOD BroadBand
+Broadband Turbidity
+Albedo (CM21)
+Albedo (CM3)
+Albedo (LI-200)
+Albedo (LI-190)
+SE-POA Angle
+501A Temp
+CUVA1 Temp
+CUVB1 Temp
+CUVA2 Temp
+CUVB2 Temp
+UV-S-A-T Temp
+UV-S-B-T Temp
+UVB-1 Temp
+CMP22 Case Temp
+PIR DW Dome Temp
+PIR DW Case Temp
+PIR UW Dome Temp
+PIR UW Case Temp
+CG4 DW Case Temp
+CG3 UW Case Temp
+CR3000 Deck Temp
+CR3000 RTwr Temp
+CR800 MTwr Temp
+CR3000 Deck Battery
+CR3000 RTwr Battery
+CR800 MTwr Battery
+LI-2020 Battery
+螖T
+螖UT1
+CR3000 Deck Pgm. Time
+CR3000 RTwr Pgm. Time
+CR800 MTwr Pgm. Time
+CR3000 Deck CF Change
+CR3000 RTwr CF Change
+CR3000 Zen Angle
+Snow Depth Quality
+Horiz TP Thermal Corr
+Research Ch. 1
+Research Ch. 2
+Research Ch. 3
+Research Ch. 4
+Research Thm. 1
+Research Thm. 2
+Research Thm. 3
+Research RTwr 0
+Research RTwr 1
+Research RTwr 2
+Research RTwr 3
+Research PVTwr 0
+Research PVTwr 1
+Research PVTwr 2
