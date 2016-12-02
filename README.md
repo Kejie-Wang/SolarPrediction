@@ -20,8 +20,8 @@ Ubuntu 14.04
 Before run this project, make sure that you have installed all dependecy and you should use the python script to download the dataset by yourself since the dataset is too large that I have not upload it into the Github. 
 
 **Download the dataset** (*this may cost severals hours to get the data and please wait patiently*):
-- Download the nrel irradiance and meteorological data from the [**SSRL_BMS**](https://www.nrel.gov/midc/srrl_bms/)
-    ***`# python dataset/NREL_SSRL_BMS_IRANDMETE/ssrl_bms_historical_data_spider.py`***
+- Download the nrel irradiance and meteorological data from the [**SSRL_BMS**](https://www.nrel.gov/midc/srrl_bms/)  
+***`# python dataset/NREL_SSRL_BMS_IRANDMETE/ssrl_bms_historical_data_spider.py`***
 - Download the ssrl sky image from the [**skycam**](https://www.nrel.gov/midc/skycam).  
 ***`# python dataset/NREL_SSRL_BMS_SKY_CAM/ssrl_sky_image_spider_multi_thread.py`***
 
