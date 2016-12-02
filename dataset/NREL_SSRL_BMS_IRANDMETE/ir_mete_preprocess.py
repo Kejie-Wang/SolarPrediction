@@ -2,6 +2,9 @@
 nrel_solar_preprocess.py
 
 """
+__author__  = "WANG Kejie"
+__email__ = "wang_kejie@foxmail.com"
+
 import xlrd
 import json
 from collections import namedtuple
