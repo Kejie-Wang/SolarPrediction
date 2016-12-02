@@ -12,17 +12,17 @@ def download_file(url, file_path):
 		fp.close()
 
 ys, ms = 2006, 1
-ye = 2016, 7
+ye, me = 2016, 7
 
 url = 'https://www.nrel.gov/midc/srrl_bms/historical/data/'
-file_path = "./data/"
+file_path = "./raw_data/"
 
 if not os.path.exists(file_path):
 	os.mkdir(file_path)
 if not os.path.exists(file_path + str(ys)):
 	os.mkdir(file_path+str(ys))
 yit, mit = ys, ms
-while (yit < ye) or (yit==ye and mit<=ye):
+while (yit < ye) or (yit==ye and mit<=me):
 	file_name = get_file_name(yit, mit)
 	download_file(url+file_name, file_path+str(yit).rjust(4, '0')+'/'+file_name)
 	mit += 1
