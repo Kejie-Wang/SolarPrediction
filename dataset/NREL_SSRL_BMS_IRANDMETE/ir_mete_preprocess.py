@@ -46,6 +46,7 @@ target_data = list()
 
 yit, mit = config.year_start, config.month_start
 while (yit < config.year_end) or (yit==config.year_end and mit<=config.month_end):
+	print yit,mit
 	zip_file_path = raw_data_path + str(yit).rjust(4, '0') + "/" + str(yit).rjust(4, '0') + str(mit).rjust(2, '0') + ".zip"
 	zf = zipfile.ZipFile(zip_file_path, 'r')
 	str_data = zf.read(zf.namelist()[0]).replace('\r\n', '\n')
@@ -66,7 +67,6 @@ while (yit < config.year_end) or (yit==config.year_end and mit<=config.month_end
 	#next month
 	yit = yit + mit // MONTH_IN_A_YEAR
 	mit = mit%MONTH_IN_A_YEAR + 1
-	print mit
 
 #concatenate all data
 ir_data = np.concatenate(ir_data, axis=0)
