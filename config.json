@@ -1,62 +1,45 @@
 {
-    "input_group_solar" : [
-        "Avg Global CMP22 (vent/cor) [W/m^2]",
-        "Avg Direct CHP1-1 [W/m^2]",
-        "Avg Diffuse 8-48 (vent) [W/m^2]"
-    ],
-    "input_group_temp" : [
-        "Avg Zenith Angle [degrees]",
-        "Avg Azimuth Angle [degrees]", 
-        "Avg Airmass", 
-        "Avg Tower Dry Bulb Temp [deg C]", 
-        "Avg Deck Dry Bulb Temp [deg C]", 
-        "Avg Tower Wet Bulb Temp [deg C]", 
-        "Avg Tower Dew Point Temp [deg C]",
-        "Avg Total Cloud Cover [%]", 
-        "Avg Opaque Cloud Cover [%]",
-        "Avg Precipitation [mm]"
-    ],
+    "year_start": 2006,
+    "month_start": 1,
+    "year_end": 2016,
+    "month_end": 7,
 
-    "target_group" : [
-        "Avg Global CMP22 (vent/cor) [W/m^2]"
-    ],
-    "train_prop" : 0.8, 
-    "validation_prop":0.1,    
+    "train_prop" : 0.8,
+    "validation_prop":0.1,
 
-    "solar_train_data_path" : "../dataset/NREL_SOLAR_DATASET/NREL_Solar_Train_Data.csv", 
-    "temp_train_data_path" : "../dataset/NREL_SOLAR_DATASET/NREL_Temp_Train_Data.csv", 
-    "target_train_data_path" : "../dataset/NREL_SOLAR_DATASET/NREL_Target_Train_Data.csv", 
-    
-    "solar_validation_data_path" : "../dataset/NREL_SOLAR_DATASET/NREL_Solar_Validation_Data.csv", 
-    "temp_validation_data_path" : "../dataset/NREL_SOLAR_DATASET/NREL_Temp_Validation_Data.csv", 
-    "target_validation_data_path" : "../dataset/NREL_SOLAR_DATASET/NREL_Target_Validation_Data.csv", 
-    
-    "solar_test_data_path" : "../dataset/NREL_SOLAR_DATASET/NREL_Solar_Test_Data.csv", 
-    "temp_test_data_path" : "../dataset/NREL_SOLAR_DATASET/NREL_Temp_Test_Data.csv", 
-    "target_test_data_path" : "../dataset/NREL_SOLAR_DATASET/NREL_Target_Test_Data.csv", 
+    "solar_train_data_path" : "../dataset/NREL_SOLAR_DATASET/NREL_Solar_Train_Data.csv",
+    "temp_train_data_path" : "../dataset/NREL_SOLAR_DATASET/NREL_Temp_Train_Data.csv",
+    "target_train_data_path" : "../dataset/NREL_SOLAR_DATASET/NREL_Target_Train_Data.csv",
+
+    "solar_validation_data_path" : "../dataset/NREL_SOLAR_DATASET/NREL_Solar_Validation_Data.csv",
+    "temp_validation_data_path" : "../dataset/NREL_SOLAR_DATASET/NREL_Temp_Validation_Data.csv",
+    "target_validation_data_path" : "../dataset/NREL_SOLAR_DATASET/NREL_Target_Validation_Data.csv",
+
+    "solar_test_data_path" : "../dataset/NREL_SOLAR_DATASET/NREL_Solar_Test_Data.csv",
+    "temp_test_data_path" : "../dataset/NREL_SOLAR_DATASET/NREL_Temp_Test_Data.csv",
+    "target_test_data_path" : "../dataset/NREL_SOLAR_DATASET/NREL_Target_Test_Data.csv",
 
     "batch_size" : 100,
-    "n_step" : 24,
-    "n_predict" : 1,
-    "n_target" : 24,
+    "n_step" : 120,
+    "h_ahead" : 9,
+    "n_target" : 1,
 
-    "epsilon" : 5,
-    "C": 2,
-    "lr": 0.005,
+    "epsilon" : 15,
+    "C": 50,
+    "lr": 0.0001,
 
-    "data_length" : 14400,
-    "data_step" : 24, 
-    
-    "epoch_size" : 1000, 
-    "print_step" : 50, 
-    "test_step" : 200, 
+    "data_step" : 24,
 
-    "n_hidden_solar" : 100, 
-    "n_hidden_temp" : 100, 
-    "n_hidden_level2" : 200,
-    "n_fully_connect_hidden": 128,
+    "epoch_size" : 1000,
+    "print_step" : 50,
+    "test_step" : 200,
 
-    "test_num" : 5, 
+    "n_hidden_solar" : 256,
+    "n_hidden_temp" : 256,
+    "n_hidden_level2" : 512,
+    "n_fully_connect_hidden": 1024,
+
+    "test_num" : 50,
 
     "model_path" : "model.ckpt"
 }
