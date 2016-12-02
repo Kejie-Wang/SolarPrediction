@@ -1,8 +1,13 @@
+"""
+nrel_solar_preprocess.py
+
+"""
 import xlrd
 import json
 from collections import namedtuple
 import numpy as np
 import time
+import zipfile
 
 HOUR_IN_A_DAY = 24
 
