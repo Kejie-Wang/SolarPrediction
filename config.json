@@ -1,42 +1,30 @@
 {
-    "year_start": 2006,
+    "year_start": 2008,
     "month_start": 1,
     "year_end": 2016,
     "month_end": 7,
 
-    "train_prop" : 0.8,
-    "validation_prop":0.1,
+    "train_prop" : 0.950,
+    "validation_prop":0.025,
 
-    "solar_train_data_path" : "../dataset/NREL_SOLAR_DATASET/NREL_Solar_Train_Data.csv",
-    "temp_train_data_path" : "../dataset/NREL_SOLAR_DATASET/NREL_Temp_Train_Data.csv",
-    "target_train_data_path" : "../dataset/NREL_SOLAR_DATASET/NREL_Target_Train_Data.csv",
-
-    "solar_validation_data_path" : "../dataset/NREL_SOLAR_DATASET/NREL_Solar_Validation_Data.csv",
-    "temp_validation_data_path" : "../dataset/NREL_SOLAR_DATASET/NREL_Temp_Validation_Data.csv",
-    "target_validation_data_path" : "../dataset/NREL_SOLAR_DATASET/NREL_Target_Validation_Data.csv",
-
-    "solar_test_data_path" : "../dataset/NREL_SOLAR_DATASET/NREL_Solar_Test_Data.csv",
-    "temp_test_data_path" : "../dataset/NREL_SOLAR_DATASET/NREL_Temp_Test_Data.csv",
-    "target_test_data_path" : "../dataset/NREL_SOLAR_DATASET/NREL_Target_Test_Data.csv",
-
-    "batch_size" : 100,
-    "n_step" : 120,
+    "batch_size" : 50,
+    "n_step" : 72,
     "h_ahead" : 9,
     "n_target" : 1,
 
     "epsilon" : 15,
-    "C": 50,
-    "lr": 0.0001,
+    "C": 0.5,
+    "lr": 0.0005,
 
     "data_step" : 24,
 
-    "epoch_size" : 1000,
+    "epoch_size" : 3000,
     "print_step" : 50,
     "test_step" : 200,
 
-    "n_hidden_solar" : 256,
-    "n_hidden_temp" : 256,
-    "n_hidden_level2" : 512,
+    "n_hidden_solar" : 512,
+    "n_hidden_temp" : 512,
+    "n_hidden_level2" : 2048,
     "n_fully_connect_hidden": 1024,
 
     "test_num" : 50,
