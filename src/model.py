@@ -88,8 +88,8 @@ class Model:
             err_greater_than_espilon = tf.cast(err > 0, tf.float32)
             total_err = tf.reduce_sum(tf.mul(tf.square(err), err_greater_than_espilon))
 
-            # self._loss = 0.5 * w_sqrt_sum + self.C * total_err
-            self._loss = total_err
+            self._loss = 0.5 * w_sqrt_sum + self.C * total_err
+            # self._loss = total_err
         return self._loss
 
 
