@@ -17,25 +17,25 @@ Ubuntu 14.04
 	- **pip install:** `pip install numpy, matplotlib, PIL, xlrd`
 
 ## How To Run
-Before run this project, make sure that you have installed all dependecy and you should use the python script to download the dataset by yourself since the dataset is too large that I have not upload it into the Github.
+Before run this project, make sure that you have installed all dependency and you should use the python script to download the dataset by yourself since the dataset is too large that I have not upload it into the Github.
 
 **Download the dataset** (*this may cost severals hours to get the data and please wait patiently*):
 - Download the nrel irradiance and meteorological data from the [**SSRL_BMS**](https://www.nrel.gov/midc/srrl_bms/)  
-***`# python dataset/NREL_SSRL_BMS_IRANDMETE/ssrl_bms_historical_data_spider.py`***
+`# python dataset/NREL_SSRL_BMS_IRANDMETE/ssrl_bms_historical_data_spider.py`
 - Download the ssrl sky image from the [**skycam**](https://www.nrel.gov/midc/skycam).  
-***`# python dataset/NREL_SSRL_BMS_SKY_CAM/ssrl_sky_image_spider_multi_thread.py`***
+`# python dataset/NREL_SSRL_BMS_SKY_CAM/ssrl_sky_image_spider_multi_thread.py`
 
 **Data preprocess**
 - NREL solar and temperature data pre-process  
-    ***`# python dataset/NREL_SSRL_BMS_IRANDMETE/ir_mete_preprocess.py`***
+    `# python dataset/NREL_SSRL_BMS_IRANDMETE/ir_mete_preprocess.py`
 
 **Seperate the data**
 - Generate the irradiance and meteorological train, test and validation data  
-	***`# python dataset/NREL_SSRL_BMS_IRANDMETE/input_data/generate.py`***
+	`# python dataset/NREL_SSRL_BMS_IRANDMETE/input_data/generate.py`
 
 **Run the model**
 - Train the model and Do prediction  
-	***`# python src/solar_prediction.py`***
+	`# python src/solar_prediction.py`
 
 
 ## Dataset
