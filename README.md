@@ -45,3 +45,6 @@ The dataset consists of three parts:
 The dataset can be download from the [SSRL_BMS Historical Monthly Data](https://www.nrel.gov/midc/srrl_bms/historical/). The field of the dataset are different since the system added some equipments in some year. You can check the field id of each year from the [data field definition](https://www.nrel.gov/midc/srrl_bms/historical/qa_fd.html). I save the field into csv files by year in the [dataset/NREL_SSRL_BMS_IRANDMETE/field](https://github.com/JackWang822/SolarPrediction/tree/master/dataset/NREL_SSRL_BMS_IRANDMETE/field) and write a python script to generate the common irradiance data and meteorological data since it is very  troublesome to handle this field. You can easily ignore the field and just focus the common id since 2006.  
 ***Note: The dataset that downloaded from the website may exist some problems such as 2008, 200908, 201007 and so on. The problems is the column is not same in the file and it will be a problem when I use the genfromtxt function in the numpy to read the csv file. The solution to this is that I open the txt file in the excel and resave it as csv file and replace it.***
 - **Sky Cam Image**  
+
+## Contact
+This project is maintained by [WANG Kejie](wang_kejie@foxmail.com) and if you have some problems or find some bugs in the procedure, please send me the email.
