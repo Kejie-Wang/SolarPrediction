@@ -7,3 +7,7 @@ src/reader_test.py
 
 #dataset ignore
 dataset/NREL_SSRL_BMS_IRANDMETE/raw_data/
+dataset/NREL_SSRL_BMS_IRANDMETE/input_data/train
+dataset/NREL_SSRL_BMS_IRANDMETE/input_data/validation
+dataset/NREL_SSRL_BMS_IRANDMETE/input_data/test
+dataset/NREL_SSRL_BMS_IRANDMETE/input_data/README
