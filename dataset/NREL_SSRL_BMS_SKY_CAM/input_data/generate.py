@@ -14,7 +14,7 @@ import os
 import time
 HOUR_IN_A_DAY = 24
 
-data_path = ".csv"
+data_path = "googlenet.csv"
 
 #load the configuratiuon
 fp = open('../../../config.json')
@@ -24,7 +24,7 @@ fp.close()
 #load the data
 sky_cam_data = np.loadtxt(data_path, delimiter=',')
 
-data_hour_length = len(im_data)
+data_hour_length = len(sky_cam_data)
 data_day_length = data_hour_length / HOUR_IN_A_DAY
 train_length = int(data_day_length * config.train_prop) * HOUR_IN_A_DAY
 validation_length = int(data_day_length * config.validation_prop) * HOUR_IN_A_DAY
