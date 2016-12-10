@@ -8,16 +8,18 @@ MISSING_VALUE = -99999
 
 ir_train_data_path = "../dataset/NREL_SSRL_BMS_IRANDMETE/input_data/train/ir_train_data.csv"
 mete_train_data_path = "../dataset/NREL_SSRL_BMS_IRANDMETE/input_data/train/mete_train_data.csv"
+sky_cam_train_data_path = "../dataset/NREL_SSRL_BMS_SKY_CAM/input_data/train/sky_cam_train_data.csv"
 target_train_data_path = "../dataset/NREL_SSRL_BMS_IRANDMETE/input_data/train/target_train_data.csv"
 
 ir_validation_data_path = "../dataset/NREL_SSRL_BMS_IRANDMETE/input_data/validation/ir_validation_data.csv"
 mete_validation_data_path = "../dataset/NREL_SSRL_BMS_IRANDMETE/input_data/validation/mete_validation_data.csv"
+sky_cam_validation_data = "../dataset/NREL_SSRL_BMS_SKY_CAM/input_data/validation/sky_cam_validation_data.csv"
 target_validation_data_path = "../dataset/NREL_SSRL_BMS_IRANDMETE/input_data/validation/target_validation_data.csv"
 
 ir_test_data_path = "../dataset/NREL_SSRL_BMS_IRANDMETE/input_data/test/ir_test_data.csv"
 mete_test_data_path = "../dataset/NREL_SSRL_BMS_IRANDMETE/input_data/test/mete_test_data.csv"
+sky_cam_test_data_path = "../dataset/NREL_SSRL_BMS_SKY_CAM/input_data/test/sky_cam_test_data.csv"
 target_test_data_path = "../dataset/NREL_SSRL_BMS_IRANDMETE/input_data/test/target_test_data.csv"
-
 
 class Reader:
     def _feature_scale(self, features):
@@ -41,14 +43,21 @@ class Reader:
             shape_targets.append(targets[ptr - n_target:ptr])
         return np.array(shape_targets)
 
-    def _get_valid_index(self, ir_features, mete_features, targets):
+    def _get_valid_index(self, ir_features, mete_features, sky_cam_features, targets):
+        """
+        @brief get the valida index of the features since there are some missing value in some feature and target
+        @param ir_features, mete_features, sky_cam_features: the three kinds of feautures
+        @return Return a indices indicates the valid features (no missing value) index
+        """
         num = len(targets)
         # print num
         missing_index = []
         for i in range(len(targets)):
-            if (MISSING_VALUE in ir_features[i]) or (MISSING_VALUE in mete_features[i]) or  (MISSING_VALUE in targets[i]):
+            if (MISSING_VALUE in ir_features[i]) or \
+                (MISSING_VALUE in mete_features[i]) or  \
+                (MISSING_VALUE in sky_cam_features[i]) or \
+                (MISSING_VALUE in targets[i]):
                 missing_index.append(i)
-        # print missing_index, len(missing_index)
         return np.setdiff1d(np.arange(num), np.array(missing_index))
 
     def __init__(self, config):
@@ -64,50 +73,13 @@ class Reader:
         mete_validation_raw_data = np.loadtxt(mete_validation_data_path, delimiter=',', ndmin=2)
         mete_test_raw_data = np.loadtxt(mete_test_data_path, delimiter=',', ndmin=2)
 
+        sky_cam_train_raw_data = np.loadtxt(sky_cam_train_data_path, delimiter=',')
+        sky_cam_validation_raw_data = np.loadtxt(sky_cam_validation_data_path, delimiter=',')
+        sky_cam_test_raw_data = np.loadtxt(sky_cam_test_data_path, delimiter=',')
+
         target_train_raw_data = np.loadtxt(target_train_data_path, delimiter=',')
         target_validation_raw_data = np.loadtxt(target_validation_data_path, delimiter=',')
         target_test_raw_data = np.loadtxt(target_test_data_path, delimiter=',')
-
-        ir_raw_data = np.concatenate((ir_train_raw_data, ir_validation_raw_data, ir_test_raw_data), axis=0)
-        mete_raw_data = np.concatenate((mete_train_raw_data, mete_validation_raw_data, mete_test_raw_data), axis=0)
-
-        # scale on the all dataset
-        # ir_raw_data_mean = np.mean(ir_raw_data, axis=0)
-        # mete_raw_data_mean = np.mean(mete_raw_data, axis=0)
-        # ir_raw_data_stddev = np.std(ir_raw_data, axis=0)
-        # mete_raw_data_stddev = np.std(mete_raw_data, axis=0)
-        # ir_train_raw_data = (ir_train_raw_data - ir_raw_data_mean) / ir_raw_data_stddev
-        # ir_validation_raw_data = (ir_validation_raw_data - ir_raw_data_mean) / ir_raw_data_stddev
-        # ir_test_raw_data = (ir_test_raw_data - ir_raw_data_mean) / ir_raw_data_stddev
-        # mete_train_raw_data = (mete_train_raw_data - mete_raw_data_mean) / mete_raw_data_stddev
-        # mete_validation_raw_data = (mete_validation_raw_data - mete_raw_data_mean) / mete_raw_data_stddev
-        # mete_test_raw_data = (mete_test_raw_data - mete_raw_data_mean) / mete_raw_data_stddev
-
-        #scale on the each hours on a day
-        # for i in range(HOUR_IN_A_DAY):
-        #     #scale on ir data
-        #     index = np.arange(i, len(ir_raw_data), HOUR_IN_A_DAY)
-        #     mean = np.mean(ir_raw_data[index], axis=0)
-        #     stddev = np.std(ir_raw_data[index], axis=0)
-        #
-        #     index = np.arange(i, len(ir_train_raw_data), HOUR_IN_A_DAY)
-        #     ir_train_raw_data[index] = (ir_train_raw_data[index]-mean) / stddev
-        #     index = np.arange(i, len(ir_validation_raw_data), HOUR_IN_A_DAY)
-        #     ir_validation_raw_data[index] = (ir_validation_raw_data[index]-mean) / stddev
-        #     index = np.arange(i, len(ir_test_raw_data), HOUR_IN_A_DAY)
-        #     ir_test_raw_data[index] = (ir_test_raw_data[index]-mean) / stddev
-        #
-        #     #scale on mete data
-        #     index = np.arange(i, len(mete_raw_data), HOUR_IN_A_DAY)
-        #     mean = np.mean(mete_raw_data[index], axis=0)
-        #     stddev = np.std(mete_raw_data[index], axis=0)
-        #
-        #     index = np.arange(i, len(mete_train_raw_data), HOUR_IN_A_DAY)
-        #     mete_train_raw_data[index] = (mete_train_raw_data[index]-mean) / stddev
-        #     index = np.arange(i, len(mete_validation_raw_data), HOUR_IN_A_DAY)
-        #     mete_validation_raw_data[index] = (mete_validation_raw_data[index]-mean) / stddev
-        #     index = np.arange(i, len(mete_test_raw_data), HOUR_IN_A_DAY)
-        #     mete_test_raw_data[index] = (mete_test_raw_data[index]-mean) / stddev
 
         #feature eshape
         #feature reshape: accumulate several(n_step) features into a new feature for the input the lstm
@@ -127,6 +99,30 @@ class Reader:
         self.train_index = self._get_valid_index(self.ir_train_data, self.mete_train_data, self.target_train_data)
         self.validation_index = self._get_valid_index(self.ir_validation_data, self.mete_validation_data, self.target_validation_data)
         self.test_index = self._get_valid_index(self.ir_test_data, self.mete_test_data, self.target_test_data)
+
+        #concatenate all valid data
+        ir_raw_valid_data = np.concatenate((ir_train_raw_data[self.train_index], ir_validation_raw_data[self.validation_index], ir_test_raw_data[self.test_index]), axis=0)
+        mete_raw_valid_data = np.concatenate((mete_train_raw_data[self.train_index], mete_validation_raw_data[self.validation_index], mete_test_raw_data[self.test_index]), axis=0)
+        sky_cam_raw_valid_data = np.concatenate((sky_cam_train_raw_data[self.train_index], sky_cam_validation_raw_data[self.validation_index], sky_cam_test_raw_data[self.test_index]), axis=0)
+
+        #feature scale
+        ir_mean = np.mean(ir_raw_valid_data, axis=0)
+        ir_std = np.std(ir_raw_valid_data, axis=0)
+        self.ir_train_data = (self.ir_train_data - ir_mean) / ir_std
+        self.ir_validation_data = (self.ir_validation_data - ir_mean) / ir_std
+        self.ir_test_data = (self.ir_test_data - ir_mean) / ir_std
+
+        mete_mean = np.std(mete_raw_valid_data, axis=0)
+        mete_std = np.std(mete_raw_valid_data, axis=0)
+        self.mete_train_data = (self.mete_train_data - mete_mean) / mete_std
+        self.mete_validation_data = (self.ir_vamete_ation_data - mete_mean) / mete_std
+        self.mete_test_data = (selfmete__test_data - mete_mean) / mete_std
+
+        sky_cam_mean = np.mean(sky_cam_raw_valid_data, axis=0)
+        sky_cam_std = np.std(sky_cam_raw_valid_data, axis=0)
+        self.sky_cam_train_data = (self.sky_cam_train_data - sky_cam_mean) / sky_cam_std
+        self.sky_cam_validation_data = (self.sky_cam_validation_data - sky_cam_mean) / sky_cam_std
+        self.sky_cam_test_data = (self.sky_cam_test_data - sky_cam_mean) / sky_cam_std
 
         #CAUTIOUS: the length of the ir_tarin_data and target_train_data may be differnet
         #the length of mete_test_data may be more short
@@ -158,13 +154,18 @@ class Reader:
         # index = np.random.random_integers(0, self.train_num-1, size=(self.batch_size))
         ir_batch_data = self.ir_train_data[index]
         mete_batch_data = self.mete_train_data[index]
+        sky_cam_batch_data = self.sky_cam_batch_data[index]
         target_batch_data = self.target_train_data[index]
 
-        return ir_batch_data, mete_batch_data, target_batch_data
+        return ir_batch_data, \
+                mete_batch_data, \
+                sky_cam_batch_data, \
+                target_batch_data
 
     def get_train_set(self):
         return self.ir_train_data[self.train_index], \
                 self.mete_train_data[self.train_index], \
+                self.sky_cam_train_data[self.train_index]
                 self.target_train_data[self.train_index]
 
     #The returned validataion and test set:
@@ -173,9 +174,11 @@ class Reader:
     def get_validation_set(self):
         return self.ir_validation_data[0:self.validataion_num], \
                 self.mete_validation_data[0:self.validataion_num], \
+                self.sky_cam_validation_data[0:self.validataion_num]
                 self.target_validation_data[0:self.validataion_num]
 
     def get_test_set(self, test_num):
         return self.ir_test_data[0:test_num], \
                 self.mete_test_data[0:test_num], \
+                self.sky_cam_test_data[0:test_num]
                 self.target_test_data[0:test_num]
