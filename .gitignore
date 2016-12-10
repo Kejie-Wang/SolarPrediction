@@ -11,10 +11,18 @@ dataset/NREL_SSRL_BMS_IRANDMETE/input_data/train
 dataset/NREL_SSRL_BMS_IRANDMETE/input_data/validation
 dataset/NREL_SSRL_BMS_IRANDMETE/input_data/test
 dataset/NREL_SSRL_BMS_IRANDMETE/input_data/README
-cl
+
 dataset/NREL_SSRL_BMS_SKY_CAM/raw_data/
 dataset/NREL_SSRL_BMS_SKY_CAM/input_data/*.csv
 dataset/NREL_SSRL_BMS_SKY_CAM/input_data/train
 dataset/NREL_SSRL_BMS_SKY_CAM/input_data/test
 dataset/NREL_SSRL_BMS_SKY_CAM/input_data/validation
 dataset/NREL_SSRL_BMS_SKY_CAM/input_data/README
+
+#reference ignore
+References/
+
+#sftp ignore
+.ftpconfig
+
+**/.Ds_Store
