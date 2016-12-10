@@ -22,22 +22,29 @@ sky_cam_test_data_path = "../dataset/NREL_SSRL_BMS_SKY_CAM/input_data/test/sky_c
 target_test_data_path = "../dataset/NREL_SSRL_BMS_IRANDMETE/input_data/test/target_test_data.csv"
 
 class Reader:
-    def _feature_scale(self, features):
-        features_num = len(features)
-        for i in range(HOUR_IN_A_DAY):
-            index = np.arange(i, features_num, HOUR_IN_A_DAY)
-            mean = np.mean(features[index], axis=0)
-            stddev = np.std(features[index], axis=0)
-            features[index] = (features[index]-mean) / stddev
-        return features
 
     def _feature_reshape(self, features, data_step, n_step):
+        """
+        @brief aggregate the multiple features (a successive time features) as a new feature to predict the following time target
+        @param features The input features in shape [features_num, feature_dim], each of which is a feature of a specific time
+        @param data_step The interval between two new features
+        @param n_step The length of the time in the lstm
+        @return a new batch shaped features in shape [new_feature_num, n_step, feature_dim]
+        """
         shape_features = []
         for ptr in range(n_step, len(features), data_step):
             shape_features.append(features[ptr - n_step:ptr])
         return np.array(shape_features)
 
     def _target_reshape(self, targets, data_step, n_step, h_ahead, n_target):
+        """
+        @brief aggregate the multiple features as a new target for multiple output and synchronize the target with the features
+        @param targets The input targets in shape [target_num, target_dim] ##now target_num=1
+        @param n_step  The interval between two new features
+        @param h_ahead The interval of the feature and target
+        @param n_target The  number of target for a prediction
+        @return an aggregated and synchronized targets in shape [new_target_num, n_target, target_dim]
+        """
         shape_targets = []
         for ptr in range(n_step + h_ahead + n_target, len(targets), data_step):
             shape_targets.append(targets[ptr - n_target:ptr])
@@ -62,6 +69,10 @@ class Reader:
 
     def __init__(self, config):
         """
+        The constructor of the class Reader
+        load the train, validation and test data from the dataset and call the function to aggregate and synchronize the features and target
+        filter the some points with the missing value
+        and do the feature pre-processing (now just scale the feature into mean is 0 and stddev is 1.0)
         """
 
         #load data
@@ -145,7 +156,8 @@ class Reader:
         print "\n\n"
 
     def next_batch(self):
-        """return a batch of train and target data
+        """
+        @brief return a batch of train and target data
         @return ir_data_batch: [batch_size, n_step, n_input]
         @return mete_data_batch:  [batch_size, n_step, n_input]
         @return target_data_batch: [n_model, batch_size, n_target]
@@ -163,6 +175,9 @@ class Reader:
                 target_batch_data
 
     def get_train_set(self):
+        """
+        @brief return the total dataset
+        """
         return self.ir_train_data[self.train_index], \
                 self.mete_train_data[self.train_index], \
                 self.sky_cam_train_data[self.train_index]
@@ -172,12 +187,19 @@ class Reader:
     #ir_data and mete_data: [batch_size, n_step, n_input], batch_size = validation_num/test_num
     #target_data: [batch_size, n_model], each of the target_data contains all model target in a tesor
     def get_validation_set(self):
+        """
+        @brief return the total validation dataset
+        """
         return self.ir_validation_data[0:self.validataion_num], \
                 self.mete_validation_data[0:self.validataion_num], \
                 self.sky_cam_validation_data[0:self.validataion_num]
                 self.target_validation_data[0:self.validataion_num]
 
     def get_test_set(self, test_num):
+        """
+        @brief return a test set in the specific test num
+        @param test_num The number of test set to return
+        """
         return self.ir_test_data[0:test_num], \
                 self.mete_test_data[0:test_num], \
                 self.sky_cam_test_data[0:test_num]
