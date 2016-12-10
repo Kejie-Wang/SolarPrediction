@@ -49,7 +49,7 @@ def main(_):
         # initialize all variables
         tf.initialize_all_variables().run()
 
-        for i in range(epoch_size+1):
+        for i in range(epoch_size):
             # test
             if i%config.test_step == 0:
                 ir_test_input, mete_test_input, test_target = reader.get_test_set(test_num)
@@ -74,7 +74,9 @@ def main(_):
             batch = reader.next_batch()
             train_feed = {x_ir:batch[0], x_mete:batch[1], y_:batch[2],keep_prob:0.5}
             sess.run(optimize, feed_dict=train_feed)
-            if i%20 == 0:
+
+            #print step
+            if i%config.print_step == 0:
                 print "train loss:",sess.run(loss, feed_dict=train_feed)
                 print "validation loss: ", validation_last_loss
 
