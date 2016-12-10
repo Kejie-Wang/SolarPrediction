@@ -8,17 +8,17 @@ class Model:
     """
     This is an multi-modal (three modality) neutral network model used as point/probabilistic forecast
         model digram:
-         ---------
-        |  lstm   |--------- |
-         ---------           |
-                             |
-         ---------           |           ----------           ------------
-        |  lstm   |--------- |----------|   lstm   | --------| regression |
-         ---------           |           ----------           ------------
-                             |
-         ---------           |
-        | CNN-lstm |---------|
-         ---------
+             ---------
+        ----|  lstm   |--------- |
+             ---------           |
+                                 |
+             ---------           |           ----------           ------------
+        ----|  lstm   |--------- |----------|   lstm   | --------| regression |
+             ---------           |           ----------           ------------
+                                 |
+             -----    ------     |
+        ----| CNN |--| lstm |----|
+             -----    ------
 
         The model focuses on the multi-modality and this model contain three modalities each of which is lstm, lstm and CNN.
         e.g. This model used to predict solar irradiance and the first and second modalities are the irradiance and meteorological data
@@ -39,7 +39,10 @@ class Model:
                config: the configuration of the model and it may contains following values:
                     n_first_hidden, n_second_hidden, n_hidden_level2, n_fully_connect_hidden, n_target: the params of the network
                     lr: learning rate
+                    regressor: the regressor type chosen from {"lin", "msvr", "prob"}
                     epsilon, C: params for epsilon-insensitive multi-support regression
+                    quantile: param for the quantile regression
+
         """
         #load the config
         #the input data
@@ -55,12 +58,20 @@ class Model:
         self.n_fully_connect_hidden = config.n_fully_connect_hidden
         self.n_target = config.n_target
 
+        #regressor type {'lin', 'msvr', 'prob'}
+        self.regressor = config.regressor
+
         #train params
         self.lr = config.lr
 
         #loss params (svr params)
-        self.epsilon = config.epsilon
-        self.C = config.C
+        if self.regressor == "msvr":
+            self.epsilon = config.epsilon
+            self.C = config.C
+
+        #quantile regression params
+        if self.regressor == "quantile":
+            self.quantile = quantile
 
         self._prediction = None
         self._optimize = None
@@ -110,12 +121,10 @@ class Model:
             h_fc1 = tf.nn.relu(tf.matmul(output, w_fc1) + b_fc1)
 
             # h_fc_drop = tf.nn.dropout(h_fc1, self.keep_prob)
-
-            #multi-support vector regresiion
             self.weight = tf.Variable(tf.truncated_normal([self.n_fully_connect_hidden, self.n_target]), dtype=tf.float32)
             bias = tf.Variable(tf.constant(0.1, shape=[self.n_target]), dtype=tf.float32)
-
             self._prediction = tf.matmul(h_fc1, self.weight) + bias
+
 
         return self._prediction
 
@@ -124,21 +133,28 @@ class Model:
         """
         Define the loss of the model and you can modify this section by using different regressor
         """
-        if self._loss is None:
-            #compute the ||w||2
-            #use the w^T * W to compute and the sum the diag to get the result
-            m = tf.matmul(tf.transpose(self.weight,[1,0]), self.weight)
-            diag = tf.matrix_diag_part(m)
-            w_sqrt_sum = tf.reduce_sum(diag)
+        if self._loss is None:        
+            if self.regressor == "lin": #only work on the target is one-dim
+                self._loss = tf.reduce_mean(tf.square(self.prediction - self.target))
+            elif self.regressor == "msvr":
+                #compute the ||w||2
+                #use the w^T * W to compute and the sum the diag to get the result
+                m = tf.matmul(tf.transpose(self.weight,[1,0]), self.weight)
+                diag = tf.matrix_diag_part(m)
+                w_sqrt_sum = tf.reduce_sum(diag)
 
-            #the loss of the trian set
-            diff = self.prediction - self.target
-            err = tf.sqrt(tf.reduce_sum(tf.square(diff), reduction_indices=1)) - self.epsilon
-            err_greater_than_espilon = tf.cast(err > 0, tf.float32)
-            total_err = tf.reduce_sum(tf.mul(tf.square(err), err_greater_than_espilon))
+                #the loss of the trian set
+                diff = self.prediction - self.target
+                err = tf.sqrt(tf.reduce_sum(tf.square(diff), reduction_indices=1)) - self.epsilon
+                err_greater_than_espilon = tf.cast(err > 0, tf.float32)
+                total_err = tf.reduce_sum(tf.mul(tf.square(err), err_greater_than_espilon))
 
-            self._loss = 0.5 * w_sqrt_sum + self.C * total_err
-            # self._loss = total_err
+                self._loss = 0.5 * w_sqrt_sum + self.C * total_err
+            elif self.regressor == "prob":
+                diff = self.prediction - self.target
+                coeff = tf.cast(diff>0, tf.float32) - self.quantile
+                self._loss = tf.reduce_sum(tf.mul(tf.diff, tf.coeff))
+
         return self._loss
 
 

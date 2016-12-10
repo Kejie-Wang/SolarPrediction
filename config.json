@@ -12,10 +12,13 @@
     "h_ahead" : 9,
     "n_target" : 1,
 
-    "model": "lin",
+    "regressor": "msvr",
+
     "epsilon" : 15,
     "C": 0.5,
     "lr": 0.001,
+
+    "quantile": 0.3,
 
     "data_step" : 24,
 
