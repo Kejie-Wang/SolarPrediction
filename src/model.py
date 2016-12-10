@@ -25,7 +25,7 @@ class Model:
             and the third modality is an image dataset and use an CNN to extract the feature. And then concatenating all features into a
             feature as the input of the lstm of the second level. Then we use the output of the last cell as the regressor input to predict
             the value.
-        regressor: there are lots of regressors can be used for different purpose.
+        regressor: there are lots of regressors can be used for different purpose. (specific in the config in )
             e.g. linear regression, a fully connected NN with linear regression, support vector regression,
                 multi-support vector regression (considering the time dependency)
                 quantile regression (used as probabilistic regression)
@@ -86,7 +86,7 @@ class Model:
             # concat two features into a feature
             # NOTICE: there is no cnn layer since we use the opencv or some other methods to extract features
             #         from the images and so only concat it with the lstm outputs
-            data_level2 = tf.concat(1, [outputs_1, outputs_2, data[2]])
+            data_level2 = tf.concat(1, [outputs_1, outputs_2, self.data[2]])
 
             #2nd level lstm
             with tf.variable_scope("second_level"):
