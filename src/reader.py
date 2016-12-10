@@ -62,7 +62,7 @@ class Reader:
         for i in range(len(targets)):
             if (MISSING_VALUE in ir_features[i]) or \
                 (MISSING_VALUE in mete_features[i]) or  \
-                (-9999 in sky_cam_features[i]) or \
+                (MISSING_VALUE in sky_cam_features[i]) or \
                 (True in np.isnan(sky_cam_features[i])) or \
                 (MISSING_VALUE in targets[i]):
                 missing_index.append(i)
@@ -172,7 +172,7 @@ class Reader:
         # index = np.random.random_integers(0, self.train_num-1, size=(self.batch_size))
         ir_batch_data = self.ir_train_data[index]
         mete_batch_data = self.mete_train_data[index]
-        sky_cam_batch_data = self.sky_cam_batch_data[index]
+        sky_cam_batch_data = self.sky_cam_train_data[index]
         target_batch_data = self.target_train_data[index]
 
         return ir_batch_data, \
