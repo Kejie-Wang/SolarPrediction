@@ -25,6 +25,7 @@
 
     "n_first_hidden" : 1024,
     "n_second_hidden" : 1024,
+    "n_third_hidden" : 1024,
     "n_hidden_level2" : 1024,
     "n_fully_connect_hidden": 1024,
 
