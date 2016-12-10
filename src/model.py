@@ -5,17 +5,51 @@ __date__ = '12/10/2016'
 import tensorflow as tf
 
 class Model:
+    """
+    This is an multi-modal (three modality) neutral network model used as point/probabilistic forecast
+        model digram:
+         ---------
+        |  lstm   |--------- |
+         ---------           |
+                             |
+         ---------           |           ----------           ------------
+        |  lstm   |--------- |----------|   lstm   | --------| regression |
+         ---------           |           ----------           ------------
+                             |
+         ---------           |
+        |  CNN    |--------- |
+         ---------
+
+        The model focuses on the multi-modality and this model contain three modalities each of which is lstm, lstm and CNN.
+        e.g. This model used to predict solar irradiance and the first and second modalities are the irradiance and meteorological data
+            and the third modality is an image dataset and use an CNN to extract the feature. And then concatenating all features into a
+            feature as the input of the lstm of the second level. Then we use the output of the last cell as the regressor input to predict
+            the value.
+        regressor: there are lots of regressors can be used for different purpose.
+            e.g. linear regression, a fully connected NN with linear regression, support vector regression,
+                multi-support vector regression (considering the time dependency)
+                quantile regression (used as probabilistic regression)
+    """
     def __init__(self, data, target, keep_prob, config):
+        """
+        @brief The constructor of the model
+        @param data: the input the data of the model (features) data[0], data[1], ... for multi-modality
+               target: the groundtruth of the model
+               keep_prob: use dropout to avoid overfitting (https://www.cs.toronto.edu/%7Ehinton/absps/JMLRdropout.pdf)
+               config: the configuration of the model and it may contains following values:
+                    n_first_hidden, n_second_hidden, n_hidden_level2, n_fully_connect_hidden, n_target: the params of the network
+                    lr: learning rate
+                    epsilon, C: params for epsilon-insensitive multi-support regression
+        """
         #load the config
         #the input data
-        self.solar_data = data[0]
-        self.temp_data = data[1]
+        self.data = data
         self.target = target
         self.keep_prob = keep_prob
 
         #the network parameters
-        self.n_hidden_solar = config.n_hidden_solar
-        self.n_hidden_temp = config.n_hidden_temp
+        self.n_first_hidden = config.n_first_hidden
+        self.n_second_hidden = config.n_second_hidden
         self.n_hidden_level2 = config.n_hidden_level2
         self.n_fully_connect_hidden = config.n_fully_connect_hidden
         self.n_target = config.n_target
@@ -33,28 +67,35 @@ class Model:
 
     @property
     def prediction(self):
+        """
+        Build the graph of the model and return the prediction value of the model
+        NOTE: You can easily treat it as an member of this class (model.prediction to refer)
+        """
         if self._prediction is None:
             # build the graph
             # solar rnn lstm
-            with tf.variable_scope("solar_level1"):
-                cell_solar = tf.nn.rnn_cell.LSTMCell(self.n_hidden_solar, state_is_tuple=True)
-                outputs_solar, state_solar = tf.nn.dynamic_rnn(cell_solar, self.solar_data, dtype=tf.float32)
+            with tf.variable_scope("first_level1"):
+                cell_1 = tf.nn.rnn_cell.LSTMCell(self.n_first_hidden, state_is_tuple=True)
+                outputs_1, state_1 = tf.nn.dynamic_rnn(cell_1, self.data[0], dtype=tf.float32)
 
             # temp rnn lstm
-            with tf.variable_scope("temp_level1"):
-                cell_temp = tf.nn.rnn_cell.LSTMCell(self.n_hidden_temp, state_is_tuple=True)
-                outputs_temp, state_temp = tf.nn.dynamic_rnn(cell_temp, self.temp_data, dtype=tf.float32)
+            with tf.variable_scope("first_level2"):
+                cell_2 = tf.nn.rnn_cell.LSTMCell(self.n_second_hidden, state_is_tuple=True)
+                outputs_2, state_2 = tf.nn.dynamic_rnn(cell_2, self.data[1], dtype=tf.float32)
 
             # concat two features into a feature
-            data_level2 = tf.concat(1, [outputs_solar, outputs_temp])
+            # NOTICE: there is no cnn layer since we use the opencv or some other methods to extract features
+            #         from the images and so only concat it with the lstm outputs
+            data_level2 = tf.concat(1, [outputs_1, outputs_2, data[2]])
 
             #2nd level lstm
-            with tf.variable_scope("level2"):
+            with tf.variable_scope("second_level"):
                 cell_level2 = tf.nn.rnn_cell.LSTMCell(self.n_hidden_level2, state_is_tuple=True)
                 outputs, state_level2 = tf.nn.dynamic_rnn(cell_level2, data_level2, dtype=tf.float32)
 
             #outputs: [batch_size, n_step, n_hidden] -->> [n_step, batch_size, n_hidden]
             #output: [batch_size, n_hidden]
+            #get the last output of the lstm as the input of the regressor
             outputs = tf.transpose(outputs, [1, 0, 2])
             output = tf.gather(outputs, int(outputs.get_shape()[0]) - 1)
 
@@ -75,6 +116,9 @@ class Model:
 
     @property
     def loss(self):
+        """
+        Define the loss of the model and you can modify this section by using different regressor
+        """
         if self._loss is None:
             #compute the ||w||2
             #use the w^T * W to compute and the sum the diag to get the result
@@ -95,6 +139,9 @@ class Model:
 
     @property
     def optimize(self):
+        """
+        Define the optimizer of the model used to train the model
+        """
         if self._optimize is None:
             optimizer = tf.train.AdamOptimizer(self.lr)
             self._optimize = optimizer.minimize(self.loss)
