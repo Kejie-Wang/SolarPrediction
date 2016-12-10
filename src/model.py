@@ -86,7 +86,7 @@ class Model:
             # concat two features into a feature
             # NOTICE: there is no cnn layer since we use the opencv or some other methods to extract features
             #         from the images and so only concat it with the lstm outputs
-            data_level2 = tf.concat(1, [outputs_1, outputs_2, self.data[2]])
+            data_level2 = tf.concat(2, [outputs_1, outputs_2, self.data[2]])
 
             #2nd level lstm
             with tf.variable_scope("second_level"):
