@@ -30,13 +30,12 @@ def main(_):
     #define the input and output
     x_ir = tf.placeholder(tf.float32, [None, n_step, n_input_ir])
     x_mete = tf.placeholder(tf.float32, [None, n_step, n_input_mete])
-    x_sky_cam = tf.placeholder(tf.float32, [None, n_step, n_input_sky_cam])
     y_ = tf.placeholder(tf.float32, [None, n_target])
     keep_prob = tf.placeholder(tf.float32)
 
     reader = Reader(config)
 
-    model = Model([x_ir, x_mete, x_sky_cam], y_, keep_prob, config)
+    model = Model([x_ir, x_mete], y_, keep_prob, config)
 
     prediction = model.prediction
     loss = model.loss

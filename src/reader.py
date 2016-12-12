@@ -47,7 +47,7 @@ class Reader:
             shape_targets.append(targets[ptr - n_target:ptr])
         return np.array(shape_targets)
 
-    def _get_valid_index(self, sky_cam_features, targets):
+    def _get_valid_index(self, ir_features, mete_features, targets):
         """
         @brief get the valida index of the features since there are some missing value in some feature and target
         @param ir_features, mete_features, sky_cam_features: the three kinds of feautures
