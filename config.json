@@ -4,29 +4,29 @@
     "year_end": 2016,
     "month_end": 7,
 
-    "train_prop" : 0.950,
-    "validation_prop":0.025,
+    "train_prop" : 0.8,
+    "validation_prop":0.1,
 
-    "batch_size" : 100,
+    "batch_size" : 200,
     "n_step" : 72,
     "h_ahead" : 9,
     "n_target" : 1,
 
     "model": "lin",
     "epsilon" : 15,
-    "C": 0.5,
+    "C": 5000,
     "lr": 0.001,
 
     "data_step" : 24,
 
     "epoch_size" : 3000,
     "print_step" : 10,
-    "test_step" : 200,
+    "test_step" : 50,
 
     "n_first_hidden" : 1024,
-    "n_second_hidden" : 1024,
+    "n_second_hidden" : 512,
     "n_hidden_level2" : 1024,
-    "n_fully_connect_hidden": 1024,
+    "n_fully_connect_hidden": 2048,
 
     "test_num" : 70,
 

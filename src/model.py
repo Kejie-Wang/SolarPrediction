@@ -14,11 +14,7 @@ class Model:
                              |
          ---------           |           ----------           ------------
         |  lstm   |--------- |----------|   lstm   | --------| regression |
-         ---------           |           ----------           ------------
-                             |
-         ---------           |
-        |  CNN    |--------- |
-         ---------
+         ---------                       ----------           ------------
 
         The model focuses on the multi-modality and this model contain three modalities each of which is lstm, lstm and CNN.
         e.g. This model used to predict solar irradiance and the first and second modalities are the irradiance and meteorological data
@@ -128,9 +124,10 @@ class Model:
 
             #the loss of the trian set
             diff = self.prediction - self.target
-            err = tf.sqrt(tf.reduce_sum(tf.square(diff), reduction_indices=1)) - self.epsilon
+            batch_size, target_dim = diff.get_shape()
+            err = tf.sqrt(tf.reduce_sum(tf.square(diff), reduction_indices=1)) - self.epsilon * tf.sqrt(tf.cast(target_dim, tf.float32))
             err_greater_than_espilon = tf.cast(err > 0, tf.float32)
-            total_err = tf.reduce_sum(tf.mul(tf.square(err), err_greater_than_espilon))
+            total_err = tf.reduce_mean(tf.mul(tf.square(err), err_greater_than_espilon))
 
             self._loss = 0.5 * w_sqrt_sum + self.C * total_err
         return self._loss

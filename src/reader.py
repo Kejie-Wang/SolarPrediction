@@ -109,17 +109,17 @@ class Reader:
         mete_raw_valid_data = np.concatenate((mete_train_raw_data[self.train_index], mete_validation_raw_data[self.validation_index], mete_test_raw_data[self.test_index]), axis=0)
 
         #feature scale
-        ir_mean = np.mean(ir_raw_valid_data, axis=0)
-        ir_std = np.std(ir_raw_valid_data, axis=0)
-        self.ir_train_data = (self.ir_train_data - ir_mean) / ir_std
-        self.ir_validation_data = (self.ir_validation_data - ir_mean) / ir_std
-        self.ir_test_data = (self.ir_test_data - ir_mean) / ir_std
-
-        mete_mean = np.std(mete_raw_valid_data, axis=0)
-        mete_std = np.std(mete_raw_valid_data, axis=0)
-        self.mete_train_data = (self.mete_train_data - mete_mean) / mete_std
-        self.mete_validation_data = (self.mete_validation_data - mete_mean) / mete_std
-        self.mete_test_data = (self.mete_test_data - mete_mean) / mete_std
+        # ir_mean = np.mean(ir_raw_valid_data, axis=0)
+        # ir_std = np.std(ir_raw_valid_data, axis=0)
+        # self.ir_train_data = (self.ir_train_data - ir_mean) / ir_std
+        # self.ir_validation_data = (self.ir_validation_data - ir_mean) / ir_std
+        # self.ir_test_data = (self.ir_test_data - ir_mean) / ir_std
+        #
+        # mete_mean = np.std(mete_raw_valid_data, axis=0)
+        # mete_std = np.std(mete_raw_valid_data, axis=0)
+        # self.mete_train_data = (self.mete_train_data - mete_mean) / mete_std
+        # self.mete_validation_data = (self.mete_validation_data - mete_mean) / mete_std
+        # self.mete_test_data = (self.mete_test_data - mete_mean) / mete_std
 
         #CAUTIOUS: the length of the ir_tarin_data and target_train_data may be differnet
         #the length of mete_test_data may be more short
