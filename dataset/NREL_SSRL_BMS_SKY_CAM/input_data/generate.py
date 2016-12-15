@@ -16,10 +16,16 @@ HOUR_IN_A_DAY = 24
 
 data_path = "googlenet.csv"
 
-#load the configuratiuon
-fp = open('../../../config.json')
-config = json.load(fp, object_hook=lambda d:namedtuple('X', d.keys())(*d.values()))
-fp.close()
+if len(sys.argv) != 3:
+	print "Error: please input the train and validation set prop, e.g. python generate.py 0.9 0.05"
+	exit(0)
+
+train_prop = float(sys.argv[1])
+validation_prop = float(sys.argv[2])
+
+if train_prop + validation_prop >= 1:
+	print "Error: the sum of train and validation proportion can NOT larger than 1"
+	exit(0)
 
 #load the data
 sky_cam_data = np.loadtxt(data_path, delimiter=',')
