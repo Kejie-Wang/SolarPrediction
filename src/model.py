@@ -71,7 +71,7 @@ class Model:
 
         #quantile regression params
         if self.regressor == "quantile":
-            self.quantile = quantile
+            self.quantile_rate = quantile_rate
 
         self._prediction = None
         self._optimize = None
@@ -85,16 +85,17 @@ class Model:
         """
         if self._prediction is None:
             # build the graph
-            # solar rnn lstm
+            # irradiance rnn lstm
             with tf.variable_scope("first_level1"):
                 cell_1 = tf.nn.rnn_cell.LSTMCell(self.n_first_hidden, state_is_tuple=True)
                 outputs_1, state_1 = tf.nn.dynamic_rnn(cell_1, self.data[0], dtype=tf.float32)
 
-            # temp rnn lstm
+            # meteorological rnn lstm
             with tf.variable_scope("first_level2"):
                 cell_2 = tf.nn.rnn_cell.LSTMCell(self.n_second_hidden, state_is_tuple=True)
                 outputs_2, state_2 = tf.nn.dynamic_rnn(cell_2, self.data[1], dtype=tf.float32)
 
+            #image rnn lstm
             with tf.variable_scope("first_level3"):
                 cell_3 = tf.nn.rnn_cell.LSTMCell(self.n_third_hidden, state_is_tuple=True)
                 outputs_3, state3 = tf.nn.dynamic_rnn(cell_3, self.data[2], dtype=tf.float32)
@@ -102,7 +103,7 @@ class Model:
             # concat two features into a feature
             # NOTICE: there is no cnn layer since we use the opencv or some other methods to extract features
             #         from the images and so only concat it with the lstm outputs
-            data_level2 = tf.concat(2, [outputs_1, outputs_2, outputs_3)
+            data_level2 = tf.concat(2, [outputs_1, outputs_2, outputs_3])
 
             #2nd level lstm
             with tf.variable_scope("second_level"):
@@ -133,7 +134,7 @@ class Model:
         """
         Define the loss of the model and you can modify this section by using different regressor
         """
-        if self._loss is None:        
+        if self._loss is None:
             if self.regressor == "lin": #only work on the target is one-dim
                 self._loss = tf.reduce_mean(tf.square(self.prediction - self.target))
             elif self.regressor == "msvr":
@@ -150,9 +151,9 @@ class Model:
                 total_err = tf.reduce_sum(tf.mul(tf.square(err), err_greater_than_espilon))
 
                 self._loss = 0.5 * w_sqrt_sum + self.C * total_err
-            elif self.regressor == "prob":
+            elif self.regressor == "quantile":
                 diff = self.prediction - self.target
-                coeff = tf.cast(diff>0, tf.float32) - self.quantile
+                coeff = tf.cast(diff>0, tf.float32) - self.quantile_rate
                 self._loss = tf.reduce_sum(tf.mul(tf.diff, tf.coeff))
 
         return self._loss

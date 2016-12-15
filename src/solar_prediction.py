@@ -4,17 +4,14 @@ __date__ = '21/11/2016'
 
 import tensorflow as tf
 import numpy as np
-import json
-from collections import namedtuple
+from config import Model_Config
 from reader import Reader
 from model import Model
 from util import MSE_And_MAE, test_figure_plot
 
 def main(_):
     #get the config
-    fp = open('../config.json')
-    config = json.load(fp, object_hook=lambda d:namedtuple('X', d.keys())(*d.values()))
-    fp.close()
+    config = Model_Config()
 
     n_step = config.n_step
     n_target = config.n_target
