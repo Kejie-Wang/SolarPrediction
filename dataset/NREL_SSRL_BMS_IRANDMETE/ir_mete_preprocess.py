@@ -1,4 +1,9 @@
 from __future__ import division
+
+# -*- coding: utf-8 -*-
+__author__= 'WANG Kejie<wang_kejie@foxmail.com>'
+__date__ = '20/11/2016'
+
 """
 ir_mete_preprocess.py
 
@@ -6,8 +11,6 @@ ir_mete_preprocess.py
 __author__  = "WANG Kejie"
 __email__ = "wang_kejie@foxmail.com"
 
-import json
-from collections import namedtuple
 import numpy as np
 import zipfile
 from io import StringIO
@@ -26,10 +29,11 @@ ir_field_file_path = "field/irradiance_common_id.csv"
 mete_field_file_path = "field/meteorological_common_id.csv"
 target_field_file_path = "field/target_id.csv"
 
-#load the configuratiuon
-fp = open('../../config.json')
-config = json.load(fp, object_hook=lambda d:namedtuple('X', d.keys())(*d.values()))
-fp.close()
+#dataset range configuration
+year_start = 2008
+month_start = 1
+year_end = 2016
+month_end = 7
 
 #load the common field of the irradiance and meteorological
 ir_field = np.loadtxt(ir_field_file_path, dtype='str', delimiter=',', comments=None, ndmin=2)[:,1].astype(int)
@@ -43,8 +47,8 @@ ir_data = list()
 mete_data = list()
 target_data = list()
 
-yit, mit = config.year_start, config.month_start
-while (yit < config.year_end) or (yit==config.year_end and mit<=config.month_end):
+yit, mit = year_start, month_start
+while (yit < year_end) or (yit==year_end and mit<=month_end):
 	print yit,mit
 	zip_file_path = raw_data_path + str(yit).rjust(4, '0') + "/" + str(yit).rjust(4, '0') + str(mit).rjust(2, '0') + ".zip"
 	zf = zipfile.ZipFile(zip_file_path, 'r')
