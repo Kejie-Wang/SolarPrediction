@@ -8,26 +8,31 @@ from the NREL_BMS_SKY_CAM dataset
 """
 
 import numpy as np
-import json
-from collections import namedtuple
+import sys
 import os
 import time
 HOUR_IN_A_DAY = 24
 
 data_path = "googlenet.csv"
 
-#load the configuratiuon
-fp = open('../../../config.json')
-config = json.load(fp, object_hook=lambda d:namedtuple('X', d.keys())(*d.values()))
-fp.close()
+if len(sys.argv) != 3:
+	print "Error: please input the train and validation set prop, e.g. python generate.py 0.9 0.05"
+	exit(0)
+
+train_prop = float(sys.argv[1])
+validation_prop = float(sys.argv[2])
+
+if train_prop + validation_prop >= 1:
+	print "Error: the sum of train and validation proportion can NOT larger than 1"
+	exit(0)
 
 #load the data
 sky_cam_data = np.loadtxt(data_path, delimiter=',')
 
 data_hour_length = len(sky_cam_data)
 data_day_length = data_hour_length / HOUR_IN_A_DAY
-train_length = int(data_day_length * config.train_prop) * HOUR_IN_A_DAY
-validation_length = int(data_day_length * config.validation_prop) * HOUR_IN_A_DAY
+train_length = int(data_day_length * train_prop) * HOUR_IN_A_DAY
+validation_length = int(data_day_length * validation_prop) * HOUR_IN_A_DAY
 test_length = data_hour_length - train_length - validation_length
 
 sky_cam_train_data = sky_cam_data[0:train_length]
