@@ -19,6 +19,7 @@ import os
 MINUTE_IN_A_HOUR = 60
 HOUR_IN_A_DAY = 24
 MONTH_IN_A_YEAR = 12
+MISSING_VALUE = -99999
 
 #data path
 raw_data_path = "./raw_data/"
@@ -39,6 +40,7 @@ month_end = 7
 ir_field = np.loadtxt(ir_field_file_path, dtype='str', delimiter=',', comments=None, ndmin=2)[:,1].astype(int)
 mete_field = np.loadtxt(mete_field_file_path, dtype='str', delimiter=',', comments=None, ndmin=2)[:,1].astype(int)
 target_field = np.loadtxt(target_field_file_path, dtype='str', delimiter=',', comments=None, ndmin=2)[:,1].astype(int)
+#index starts from zero
 ir_field = ir_field - 1
 mete_field = mete_field - 1
 target_field = target_field - 1
@@ -62,7 +64,12 @@ while (yit < year_end) or (yit==year_end and mit<=month_end):
 	# target_data.append(data[index,:][:,target_field])
 
 	#average the data in a hour
-	data = np.mean(np.reshape(data, (-1, MINUTE_IN_A_HOUR, data.shape[1])), axis=1)
+	data = np.reshape(data, (-1, MINUTE_IN_A_HOUR, data.shape[1]))
+	missing_value_num = np.sum((data != MISSING_VALUE).astype(np.float32), axis=1)
+	data[data == MISSING_VALUE] = 0
+	data = np.sum(data, axis=1) / missing_value_num
+	data[data == np.inf] = MISSING_VALUE
+	# data = np.mean(np.reshape(data, (-1, MINUTE_IN_A_HOUR, data.shape[1])), axis=1)
 	ir_data.append(data[:,ir_field])
 	mete_data.append(data[:,mete_field])
 	target_data.append(data[:,target_field])
