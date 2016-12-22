@@ -15,8 +15,8 @@ def main(_):
 
     n_step = config.n_step
     n_target = config.n_target
-    n_input_ir = 36
-    n_input_mete = 26
+    n_input_ir = 6
+    n_input_mete = 9
     n_input_sky_cam = 1000
 
     epoch_size = config.epoch_size
@@ -43,21 +43,43 @@ def main(_):
 
     validation_last_loss = float('inf')
 
+    # Add an op to initialize the variables.
+    init_op = tf.global_variables_initializer()
+
     with tf.Session() as sess:
         # initialize all variables
-        tf.initialize_all_variables().run()
+        sess.run(init_op)
+
+        # path = tf.train.latest_checkpoint('.')
+        # save_path = saver.restore(sess, path)
 
         for i in range(epoch_size):
             # test
             if i%config.test_step == 0:
-                ir_test_input, mete_test_input, test_target = reader.get_test_set(test_num)
+                ir_test_input, mete_test_input, test_target = reader.get_test_set()
                 test_feed = {x_ir:ir_test_input, x_mete:mete_test_input, keep_prob:1.0}
                 test_result = sess.run(prediction, feed_dict=test_feed)
 
+                diff = sorted(np.abs(test_result - test_target))
+                for i in diff:
+                    print i,
+
+                # for i in range(len(test_result)):
+                    # print testc_result[i], test_target[i]
+
+                test_feed = {x_ir:ir_test_input, x_mete:mete_test_input, y_:test_target, keep_prob:1.0}
+                print "test_loss = ", sess.run(loss,feed_dict=test_feed)
                 #calculate the mse and mae
                 mse, mae = MSE_And_MAE(test_target, test_result)
                 print "Test MSE: ", mse
                 print "Test MAE: ", mae
+
+                validation_set = reader.get_validation_set()
+                validation_feed = {x_ir:validation_set[0], x_mete:validation_set[1],keep_prob:1.0}
+                validation_result = sess.run(prediction, feed_dict=validation_feed)
+                mse, mae = MSE_And_MAE(validation_set[2], validation_result)
+                print "Validation MSE: ", mse
+                print "Validation MAE: ", mae
 
                 ir_train_input, mete_train_input, train_target = reader.next_batch()
                 train_feed = {x_ir: ir_train_input, x_mete:mete_train_input, keep_prob:1.0}
@@ -66,7 +88,6 @@ def main(_):
                 print "Train MSE: ", mse
                 print "Train MAE: ", mae
 
-                # test_figure_plot(test_target, test_result)
 
             #train
             batch = reader.next_batch()
@@ -78,9 +99,13 @@ def main(_):
                 print "train loss:",sess.run(loss, feed_dict=train_feed)
                 print "validation loss: ", validation_last_loss
 
+                # print "train weight sum:", sess.run(model.w_sum, feed_dict=train_feed)
+                # w = sess.run(model.weight)
+                # for i in w:
+                #     print i,
             #validation
             validation_set = reader.get_validation_set()
-            validation_feed = {x_ir:validation_set[0], x_mete:validation_set[1], y_:validation_set[2],keep_prob:0.5}
+            validation_feed = {x_ir:validation_set[0], x_mete:validation_set[1], y_:validation_set[2],keep_prob:1.0}
             validation_loss = sess.run(loss,feed_dict=validation_feed)
 
             #compare the validation with the last loss
@@ -91,6 +116,10 @@ def main(_):
             #     print "break"
 
             # print "validation loss: ", validation_loss
+            if i%200 == 0 and i > 0:
+                save_path = saver.save(sess, "model.ckpt")
+                print "save the model"
+
 
 if __name__ == "__main__":
     tf.app.run()

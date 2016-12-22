@@ -109,6 +109,10 @@ class Model:
             b_fc1 = tf.Variable(tf.constant(0.1, shape=[self.n_fully_connect_hidden]), dtype=tf.float32)
             h_fc1 = tf.nn.relu(tf.matmul(output, w_fc1) + b_fc1)
 
+            w_fc2 = tf.Variable(tf.truncated_normal([self.n_fully_connect_hidden, self.n_fully_connect_hidden]), dtype=tf.float32)
+            b_fc2 = tf.Variable(tf.constant(0.1, shape=[self.n_fully_connect_hidden]), dtype=tf.float32)
+            h_fc2 = tf.nn.relu(tf.matmul(h_fc1, w_fc2) + b_fc2)
+
             # h_fc_drop = tf.nn.dropout(h_fc1, self.keep_prob)
 
             #multi-support vector regresion
@@ -126,7 +130,13 @@ class Model:
         """
         if self._loss is None:
             if self.regressor == "lin": #only work on the target is one-dim
-                self._loss = tf.reduce_mean(tf.square(self.prediction - self.target))
+                m = tf.matmul(tf.transpose(self.weight,[1,0]), self.weight)
+                diag = tf.matrix_diag_part(m)
+                w_sqrt_sum = tf.reduce_sum(diag)
+
+                self.w_sum = w_sqrt_sum
+
+                self._loss = tf.reduce_mean(tf.square(self.prediction - self.target))# + w_sqrt_sum
             elif self.regressor == "msvr":
                 #compute the ||w||2
                 #use the w^T * W to compute and the sum the diag to get the result
@@ -134,13 +144,14 @@ class Model:
                 diag = tf.matrix_diag_part(m)
                 w_sqrt_sum = tf.reduce_sum(diag)
 
-                #the loss of the trian set
+                #the loss of the train set
                 diff = self.prediction - self.target
                 err = tf.sqrt(tf.reduce_sum(tf.square(diff), reduction_indices=1)) - self.epsilon
                 err_greater_than_espilon = tf.cast(err > 0, tf.float32)
                 total_err = tf.reduce_sum(tf.mul(tf.square(err), err_greater_than_espilon))
 
-                self._loss = 0.5 * w_sqrt_sum + self.C * total_err
+                self._loss = total_err
+                # self._loss = 0.5 * w_sqrt_sum + self.C * total_err
             elif self.regressor == "quantile":
                 diff = self.prediction - self.target
                 coeff = tf.cast(diff>0, tf.float32) - self.quantile_rate

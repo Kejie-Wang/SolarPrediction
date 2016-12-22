@@ -59,6 +59,8 @@ class Reader:
         for i in range(len(targets)):
             if (MISSING_VALUE in ir_features[i]) or \
                 (MISSING_VALUE in mete_features[i]) or  \
+                (True in np.isnan(ir_features[i])) or \
+                (True in np.isnan(mete_features[i])) or \
                 (MISSING_VALUE in targets[i]):
                 missing_index.append(i)
         print missing_index
@@ -72,20 +74,22 @@ class Reader:
         and do the feature pre-processing (now just scale the feature into mean is 0 and stddev is 1.0)
         """
 
+        ir_index = np.array([0, 1, 2, 17, 29, 35])
+        mete_index = np.array([1, 4, 7, 8, 9, 10, 16, 23, 24])
         #load data
-        ir_train_raw_data = np.loadtxt(ir_train_data_path, delimiter=',', ndmin=2)
-        ir_validation_raw_data = np.loadtxt(ir_validation_data_path, delimiter=',', ndmin=2)
-        ir_test_raw_data = np.loadtxt(ir_test_data_path, delimiter=',', ndmin=2)
+        ir_train_raw_data = np.loadtxt(ir_train_data_path, delimiter=',', ndmin=2)[:, ir_index]
+        ir_validation_raw_data = np.loadtxt(ir_validation_data_path, delimiter=',', ndmin=2)[:, ir_index]
+        ir_test_raw_data = np.loadtxt(ir_test_data_path, delimiter=',', ndmin=2)[:, ir_index]
 
-        mete_train_raw_data = np.loadtxt(mete_train_data_path, delimiter=',', ndmin=2)
-        mete_validation_raw_data = np.loadtxt(mete_validation_data_path, delimiter=',', ndmin=2)
-        mete_test_raw_data = np.loadtxt(mete_test_data_path, delimiter=',', ndmin=2)
+        mete_train_raw_data = np.loadtxt(mete_train_data_path, delimiter=',', ndmin=2)[:, mete_index]
+        mete_validation_raw_data = np.loadtxt(mete_validation_data_path, delimiter=',', ndmin=2)[:, mete_index]
+        mete_test_raw_data = np.loadtxt(mete_test_data_path, delimiter=',', ndmin=2)[:,mete_index]
 
         target_train_raw_data = np.loadtxt(target_train_data_path, delimiter=',')
         target_validation_raw_data = np.loadtxt(target_validation_data_path, delimiter=',')
         target_test_raw_data = np.loadtxt(target_test_data_path, delimiter=',')
 
-        #feature eshape
+        #feature reshape
         #feature reshape: accumulate several(n_step) features into a new feature for the input the lstm
         #target reshape: align the target with the input feature
         self.ir_train_data = self._feature_reshape(ir_train_raw_data, config.data_step, config.n_step)
@@ -109,17 +113,17 @@ class Reader:
         mete_raw_valid_data = np.concatenate((mete_train_raw_data[self.train_index], mete_validation_raw_data[self.validation_index], mete_test_raw_data[self.test_index]), axis=0)
 
         #feature scale
-        # ir_mean = np.mean(ir_raw_valid_data, axis=0)
-        # ir_std = np.std(ir_raw_valid_data, axis=0)
-        # self.ir_train_data = (self.ir_train_data - ir_mean) / ir_std
-        # self.ir_validation_data = (self.ir_validation_data - ir_mean) / ir_std
-        # self.ir_test_data = (self.ir_test_data - ir_mean) / ir_std
-        #
-        # mete_mean = np.std(mete_raw_valid_data, axis=0)
-        # mete_std = np.std(mete_raw_valid_data, axis=0)
-        # self.mete_train_data = (self.mete_train_data - mete_mean) / mete_std
-        # self.mete_validation_data = (self.mete_validation_data - mete_mean) / mete_std
-        # self.mete_test_data = (self.mete_test_data - mete_mean) / mete_std
+        ir_mean = np.mean(ir_raw_valid_data, axis=0)
+        ir_std = np.std(ir_raw_valid_data, axis=0)
+        self.ir_train_data = (self.ir_train_data - ir_mean) / ir_std
+        self.ir_validation_data = (self.ir_validation_data - ir_mean) / ir_std
+        self.ir_test_data = (self.ir_test_data - ir_mean) / ir_std
+
+        mete_mean = np.std(mete_raw_valid_data, axis=0)
+        mete_std = np.std(mete_raw_valid_data, axis=0)
+        self.mete_train_data = (self.mete_train_data - mete_mean) / mete_std
+        self.mete_validation_data = (self.mete_validation_data - mete_mean) / mete_std
+        self.mete_test_data = (self.mete_test_data - mete_mean) / mete_std
 
         #CAUTIOUS: the length of the ir_tarin_data and target_train_data may be differnet
         #the length of mete_test_data may be more short
@@ -148,7 +152,7 @@ class Reader:
         @return mete_data_batch:  [batch_size, n_step, n_input]
         @return target_data_batch: [n_model, batch_size, n_target]
         """
-        index = np.random.choice(self.train_index, self.batch_size)
+        index = np.random.choice(self.train_index, self.batch_size, replace=False)
         ir_batch_data = self.ir_train_data[index]
         mete_batch_data = self.mete_train_data[index]
         target_batch_data = self.target_train_data[index]
@@ -172,15 +176,15 @@ class Reader:
         """
         @brief return the total validation dataset
         """
-        return self.ir_validation_data[0:self.validataion_num], \
-                self.mete_validation_data[0:self.validataion_num], \
-                self.target_validation_data[0:self.validataion_num]
+        return self.ir_validation_data[self.validation_index], \
+                self.mete_validation_data[self.validation_index], \
+                self.target_validation_data[self.validation_index]
 
-    def get_test_set(self, test_num):
+    def get_test_set(self):
         """
         @brief return a test set in the specific test num
         @param test_num The number of test set to return
         """
-        return self.ir_test_data[0:test_num], \
-                self.mete_test_data[0:test_num], \
-                self.target_test_data[0:test_num]
+        return self.ir_test_data[self.test_index], \
+                self.mete_test_data[self.test_index], \
+                self.target_test_data[self.test_index]
