@@ -162,6 +162,8 @@ class Reader:
         print "\n\n"
 
     def path2image(self, data, index):
+        mean = cv2.resize(np.load('mean.npy'), (self.height, self.width)).astype('float32')
+        std = cv2.resize(np.load('std.npy'), (self.height, self.width)).astype('float32')
         img_list = []
         for idx in index:
             img = []
@@ -179,7 +181,9 @@ class Reader:
                     #print filename, y, m, d, h
                     path = sky_cam_raw_data_path + str(y) + '/' + str(m) + '/' + str(d) + '/' + str(filename) + '.jpg'
                     #/ home / lcc / code / python / SolarPrediction / dataset / NREL_SSRL_BMS_SKY_CAM / SSRL_SKY / 2008 / 01 / 01
-                    tmp = cv2.resize(cv2.imread(path, 0), (self.height, self.width))
+                    tmp = cv2.resize(cv2.imread(path, 0), (self.height, self.width)).astype('float32')
+                    tmp -= mean
+                    tmp /= std
                     #print 'TMMMMMMMMMMMMMP:', tmp.shape
                     img.append(tmp)
             img_list.append(img)

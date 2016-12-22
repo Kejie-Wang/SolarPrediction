@@ -15,12 +15,12 @@ class Model_Config:
 
     # network params
     # the hidden size for three modalities, second level lstm and fully connected newwork
-    n_first_hidden = 1024
-    n_second_hidden = 512
+    n_first_hidden = 2048
+    n_second_hidden = 1024
     n_third_hidden = 1024
-    cnn_feat_size = 1024
-    n_hidden_level2 = 1024
-    n_fully_connect_hidden = 1024
+    cnn_feat_size = 512
+    n_hidden_level2 = 2048
+    n_fully_connect_hidden = 4096
 
     # learning rate
     lr = 0.0001
