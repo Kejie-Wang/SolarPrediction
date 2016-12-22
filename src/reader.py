@@ -2,6 +2,7 @@
 
 from __future__ import division
 import numpy as np
+import cv2
 
 HOUR_IN_A_DAY = 24
 MISSING_VALUE = -99999
@@ -20,6 +21,8 @@ ir_test_data_path = "../dataset/NREL_SSRL_BMS_IRANDMETE/input_data/test/ir_test_
 mete_test_data_path = "../dataset/NREL_SSRL_BMS_IRANDMETE/input_data/test/mete_test_data.csv"
 sky_cam_test_data_path = "../dataset/NREL_SSRL_BMS_SKY_CAM/input_data/test/sky_cam_test_data.csv"
 target_test_data_path = "../dataset/NREL_SSRL_BMS_IRANDMETE/input_data/test/target_test_data.csv"
+
+sky_cam_raw_data_path = '../dataset/NREL_SSRL_BMS_SKY_CAM/raw_data/SSRL_SKY_CAM_IMAGE/'
 
 class Reader:
 
@@ -86,15 +89,15 @@ class Reader:
         mete_validation_raw_data = np.loadtxt(mete_validation_data_path, delimiter=',', ndmin=2)
         mete_test_raw_data = np.loadtxt(mete_test_data_path, delimiter=',', ndmin=2)
 
-        sky_cam_train_raw_data = np.loadtxt(sky_cam_train_data_path, delimiter=',')
-        sky_cam_validation_raw_data = np.loadtxt(sky_cam_validation_data_path, delimiter=',')
-        sky_cam_test_raw_data = np.loadtxt(sky_cam_test_data_path, delimiter=',')
+        sky_cam_train_raw_data = np.array(np.loadtxt(sky_cam_train_data_path, delimiter=',', dtype='float'), dtype='int')
+        sky_cam_validation_raw_data = np.array(np.loadtxt(sky_cam_validation_data_path, delimiter=',', dtype='float'), dtype='int')
+        sky_cam_test_raw_data = np.array(np.loadtxt(sky_cam_test_data_path, delimiter=',', dtype='float'), dtype='int')
 
         target_train_raw_data = np.loadtxt(target_train_data_path, delimiter=',')
         target_validation_raw_data = np.loadtxt(target_validation_data_path, delimiter=',')
         target_test_raw_data = np.loadtxt(target_test_data_path, delimiter=',')
 
-        #feature eshape
+        #feature reshape
         #feature reshape: accumulate several(n_step) features into a new feature for the input the lstm
         #target reshape: align the target with the input feature
         self.ir_train_data = self._feature_reshape(ir_train_raw_data, config.data_step, config.n_step)
@@ -120,7 +123,6 @@ class Reader:
         #concatenate all valid data
         ir_raw_valid_data = np.concatenate((ir_train_raw_data[self.train_index], ir_validation_raw_data[self.validation_index], ir_test_raw_data[self.test_index]), axis=0)
         mete_raw_valid_data = np.concatenate((mete_train_raw_data[self.train_index], mete_validation_raw_data[self.validation_index], mete_test_raw_data[self.test_index]), axis=0)
-        sky_cam_raw_valid_data = np.concatenate((sky_cam_train_raw_data[self.train_index], sky_cam_validation_raw_data[self.validation_index], sky_cam_test_raw_data[self.test_index]), axis=0)
 
         #feature scale
         ir_mean = np.mean(ir_raw_valid_data, axis=0)
@@ -135,12 +137,6 @@ class Reader:
         self.mete_validation_data = (self.mete_validation_data - mete_mean) / mete_std
         self.mete_test_data = (self.mete_test_data - mete_mean) / mete_std
 
-        sky_cam_mean = np.mean(sky_cam_raw_valid_data, axis=0)
-        sky_cam_std = np.std(sky_cam_raw_valid_data, axis=0)
-        self.sky_cam_train_data = (self.sky_cam_train_data - sky_cam_mean) / sky_cam_std
-        self.sky_cam_validation_data = (self.sky_cam_validation_data - sky_cam_mean) / sky_cam_std
-        self.sky_cam_test_data = (self.sky_cam_test_data - sky_cam_mean) / sky_cam_std
-
         #CAUTIOUS: the length of the ir_tarin_data and target_train_data may be differnet
         #the length of mete_test_data may be more short
         #and thus we must use the target data to compute the number
@@ -149,6 +145,10 @@ class Reader:
         self.test_num = len(self.target_test_data)
 
         self.batch_size = config.batch_size
+
+        self.n_step = config.n_step
+        self.width = config.width
+        self.height = config.height
 
         # self.index = np.random.random_integers(0, self.train_num-1, size=(self.batch_size))
         #print the dataset info
@@ -161,6 +161,31 @@ class Reader:
         print "use", config.n_step, "hours to predict the next ", config.n_target, " consecutive hours"
         print "\n\n"
 
+    def path2image(self, data, index):
+        img_list = []
+        for idx in index:
+            img = []
+            for i in range(self.n_step):
+                if data[idx, i] == -11111:
+                    img.append(np.zeros((self.height,self.width)))
+                else:
+                    #print '3'
+                    filename = str(int(data[idx, i]))
+                    #print 'lllllllllllllll:', data[idx, i]
+                    y = filename[:4]
+                    m = filename[4:6]
+                    d = filename[6:8]
+                    #h = filename[8:]
+                    #print filename, y, m, d, h
+                    path = sky_cam_raw_data_path + str(y) + '/' + str(m) + '/' + str(d) + '/' + str(filename) + '.jpg'
+                    #/ home / lcc / code / python / SolarPrediction / dataset / NREL_SSRL_BMS_SKY_CAM / SSRL_SKY / 2008 / 01 / 01
+                    tmp = cv2.resize(cv2.imread(path, 0), (self.height, self.width))
+                    #print 'TMMMMMMMMMMMMMP:', tmp.shape
+                    img.append(tmp)
+            img_list.append(img)
+        return np.array(img_list)
+
+
     def next_batch(self):
         """
         @brief return a batch of train and target data
@@ -168,11 +193,11 @@ class Reader:
         @return mete_data_batch:  [batch_size, n_step, n_input]
         @return target_data_batch: [n_model, batch_size, n_target]
         """
-        index = np.random.choice(self.train_index, self.batch_size)
+        index = np.random.choice(self.train_index, self.batch_size, replace=False)
         # index = np.random.random_integers(0, self.train_num-1, size=(self.batch_size))
         ir_batch_data = self.ir_train_data[index]
         mete_batch_data = self.mete_train_data[index]
-        sky_cam_batch_data = self.sky_cam_train_data[index]
+        sky_cam_batch_data = self.path2image(self.sky_cam_train_data, index)
         target_batch_data = self.target_train_data[index]
 
         return ir_batch_data, \
@@ -186,7 +211,7 @@ class Reader:
         """
         return self.ir_train_data[self.train_index], \
                 self.mete_train_data[self.train_index], \
-                self.sky_cam_train_data[self.train_index], \
+                self.path2image(self.sky_cam_train_data, self.train_index), \
                 self.target_train_data[self.train_index]
 
     #The returned validataion and test set:
@@ -196,17 +221,17 @@ class Reader:
         """
         @brief return the total validation dataset
         """
-        return self.ir_validation_data[0:self.validataion_num], \
-                self.mete_validation_data[0:self.validataion_num], \
-                self.sky_cam_validation_data[0:self.validataion_num], \
-                self.target_validation_data[0:self.validataion_num]
+        return self.ir_validation_data[self.validation_index], \
+                self.mete_validation_data[self.validation_index], \
+                self.path2image(self.sky_cam_validation_data, self.validation_index), \
+                self.target_validation_data[self.validation_index]
 
-    def get_test_set(self, test_num):
+    def get_test_set(self):
         """
         @brief return a test set in the specific test num
         @param test_num The number of test set to return
         """
-        return self.ir_test_data[0:test_num], \
-                self.mete_test_data[0:test_num], \
-                self.sky_cam_test_data[0:test_num], \
-                self.target_test_data[0:test_num]
+        return self.ir_test_data[self.test_index], \
+                self.mete_test_data[self.test_index], \
+                self.path2image(self.sky_cam_test_data, self.test_index), \
+                self.target_test_data[self.test_index]

@@ -17,7 +17,9 @@ def main(_):
     n_target = config.n_target
     n_input_ir = 36
     n_input_mete = 26
-    n_input_sky_cam = 1000
+
+    width_image = config.width
+    height_image = config.height
 
     epoch_size = config.epoch_size
     print_step = config.print_step
@@ -27,7 +29,7 @@ def main(_):
     #define the input and output
     x_ir = tf.placeholder(tf.float32, [None, n_step, n_input_ir])
     x_mete = tf.placeholder(tf.float32, [None, n_step, n_input_mete])
-    x_sky_cam = tf.placeholder(tf.float32, [None, n_step, n_input_sky_cam])
+    x_sky_cam = tf.placeholder(tf.float32, [None, n_step, height_image, width_image])
     y_ = tf.placeholder(tf.float32, [None, n_target])
     keep_prob = tf.placeholder(tf.float32)
 
@@ -46,12 +48,12 @@ def main(_):
 
     with tf.Session() as sess:
         # initialize all variables
-        tf.initialize_all_variables().run()
-
+        tf.global_variables_initializer().run()
+        
         for i in range(epoch_size):
             # test
             if i%config.test_step == 0:
-                ir_test_input, mete_test_input, sky_cam_test_input, test_target = reader.get_test_set(test_num)
+                ir_test_input, mete_test_input, sky_cam_test_input, test_target = reader.get_test_set()
                 test_feed = {x_ir:ir_test_input, x_mete:mete_test_input, x_sky_cam: sky_cam_test_input, keep_prob:1.0}
                 test_result = sess.run(prediction, feed_dict=test_feed)
 

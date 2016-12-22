@@ -4,7 +4,7 @@ class Model_Config:
     # lin: linear regression using MSE as loss function
     # msvr: multiple support vector regression
     # prob: probabilistic regression (use the quantile regression algorithms)
-    regressor = "msvr"
+    regressor = "lin"
 
     # msvr params
     epsilon = 15
@@ -18,6 +18,7 @@ class Model_Config:
     n_first_hidden = 1024
     n_second_hidden = 512
     n_third_hidden = 1024
+    cnn_feat_size = 1024
     n_hidden_level2 = 1024
     n_fully_connect_hidden = 1024
 
@@ -40,3 +41,6 @@ class Model_Config:
     test_num = 70
     print_step = 10
     test_step = 200
+
+    width = 64
+    height = 64

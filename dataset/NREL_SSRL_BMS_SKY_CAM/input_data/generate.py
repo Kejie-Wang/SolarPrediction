@@ -13,7 +13,7 @@ import os
 import time
 HOUR_IN_A_DAY = 24
 
-data_path = "googlenet.csv"
+data_path = "pad_data_path.csv"
 
 if len(sys.argv) != 3:
 	print "Error: please input the train and validation set prop, e.g. python generate.py 0.9 0.05"
