@@ -63,11 +63,10 @@ class Reader:
         # print num
         missing_index = []
         for i in range(len(targets)):
-            if (MISSING_VALUE in ir_features[i]) or \
-                (MISSING_VALUE in mete_features[i]) or  \
+            if (True in np.isnan(ir_features[i]))  or \
+                (True in np.isnan(mete_features[i])) or  \
                 (MISSING_VALUE in sky_cam_features[i]) or \
-                (True in np.isnan(sky_cam_features[i])) or \
-                (MISSING_VALUE in targets[i]):
+                (True in np.isnan(targets[i])):
                 missing_index.append(i)
         print missing_index
         return np.setdiff1d(np.arange(num), np.array(missing_index))
@@ -154,12 +153,12 @@ class Reader:
         #print the dataset info
         print "Dataset info"
         print "="*80
-        print "train number:", self.train_num
-        print "validation number:", self.validataion_num
-        print "test number", self.test_num
+        print "valid train number:", len(self.train_index)
+        print "valid validation number:", len(self.validation_index)
+        print "valid test number", len(self.test_index)
         print "batch size:", self.batch_size
         print "use", config.n_step, "hours to predict the next ", config.n_target, " consecutive hours"
-        print "\n\n"
+        print "\n"
 
     def path2image(self, data, index):
         mean = cv2.resize(np.load('mean.npy'), (self.height, self.width)).astype('float32')
