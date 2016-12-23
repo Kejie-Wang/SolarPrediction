@@ -54,14 +54,11 @@ class Reader:
         @return Return a indices indicates the valid features (no missing value) index
         """
         num = len(targets)
-        # print num
         missing_index = []
         for i in range(len(targets)):
-            if (MISSING_VALUE in ir_features[i]) or \
-                (MISSING_VALUE in mete_features[i]) or  \
-                (True in np.isnan(ir_features[i])) or \
+            if (True in np.isnan(ir_features[i])) or \
                 (True in np.isnan(mete_features[i])) or \
-                (MISSING_VALUE in targets[i]):
+                (True in np.isnan(targets[i])):
                 missing_index.append(i)
         print missing_index
         return np.setdiff1d(np.arange(num), np.array(missing_index))
@@ -77,13 +74,13 @@ class Reader:
         ir_index = np.array([0, 1, 2, 17, 29, 35])
         mete_index = np.array([1, 4, 7, 8, 9, 10, 16, 23, 24])
         #load data
-        ir_train_raw_data = np.loadtxt(ir_train_data_path, delimiter=',', ndmin=2)[:, ir_index]
-        ir_validation_raw_data = np.loadtxt(ir_validation_data_path, delimiter=',', ndmin=2)[:, ir_index]
-        ir_test_raw_data = np.loadtxt(ir_test_data_path, delimiter=',', ndmin=2)[:, ir_index]
+        ir_train_raw_data = np.loadtxt(ir_train_data_path, delimiter=',', ndmin=2)
+        ir_validation_raw_data = np.loadtxt(ir_validation_data_path, delimiter=',', ndmin=2)
+        ir_test_raw_data = np.loadtxt(ir_test_data_path, delimiter=',', ndmin=2)
 
-        mete_train_raw_data = np.loadtxt(mete_train_data_path, delimiter=',', ndmin=2)[:, mete_index]
-        mete_validation_raw_data = np.loadtxt(mete_validation_data_path, delimiter=',', ndmin=2)[:, mete_index]
-        mete_test_raw_data = np.loadtxt(mete_test_data_path, delimiter=',', ndmin=2)[:,mete_index]
+        mete_train_raw_data = np.loadtxt(mete_train_data_path, delimiter=',', ndmin=2)
+        mete_validation_raw_data = np.loadtxt(mete_validation_data_path, delimiter=',', ndmin=2)
+        mete_test_raw_data = np.loadtxt(mete_test_data_path, delimiter=',', ndmin=2)
 
         target_train_raw_data = np.loadtxt(target_train_data_path, delimiter=',')
         target_validation_raw_data = np.loadtxt(target_validation_data_path, delimiter=',')
@@ -138,12 +135,12 @@ class Reader:
         #print the dataset info
         print "Dataset info"
         print "="*80
-        print "train number:", self.train_num
-        print "validation number:", self.validataion_num
-        print "test number", self.test_num
+        print "valid train number:", len(self.train_index)
+        print "valid validation number:", len(self.validation_index)
+        print "valid test number", len(self.test_index)
         print "batch size:", self.batch_size
         print "use", config.n_step, "hours to predict the next ", config.n_target, " consecutive hours"
-        print "\n\n"
+        print "\n"
 
     def next_batch(self):
         """

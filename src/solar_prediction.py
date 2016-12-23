@@ -15,9 +15,8 @@ def main(_):
 
     n_step = config.n_step
     n_target = config.n_target
-    n_input_ir = 6
-    n_input_mete = 9
-    n_input_sky_cam = 1000
+    n_input_ir = 36
+    n_input_mete = 26
 
     epoch_size = config.epoch_size
     print_step = config.print_step

@@ -15,14 +15,14 @@ class Model_Config:
 
     # network params
     # the hidden size for three modalities, second level lstm and fully connected network
-    n_first_hidden = 2048
-    n_second_hidden = 1024
+    n_first_hidden = 1024
+    n_second_hidden = 512
     n_third_hidden = 256
-    n_hidden_level2 = 2048
-    n_fully_connect_hidden = 4096
+    n_hidden_level2 = 1024
+    n_fully_connect_hidden = 2048
 
     # learning rate
-    lr = 0.00001
+    lr = 0.0001
 
     # data reader configuration
     # data_step: the lag between the two input series

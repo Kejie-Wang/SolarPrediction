@@ -109,10 +109,6 @@ class Model:
             b_fc1 = tf.Variable(tf.constant(0.1, shape=[self.n_fully_connect_hidden]), dtype=tf.float32)
             h_fc1 = tf.nn.relu(tf.matmul(output, w_fc1) + b_fc1)
 
-            w_fc2 = tf.Variable(tf.truncated_normal([self.n_fully_connect_hidden, self.n_fully_connect_hidden]), dtype=tf.float32)
-            b_fc2 = tf.Variable(tf.constant(0.1, shape=[self.n_fully_connect_hidden]), dtype=tf.float32)
-            h_fc2 = tf.nn.relu(tf.matmul(h_fc1, w_fc2) + b_fc2)
-
             # h_fc_drop = tf.nn.dropout(h_fc1, self.keep_prob)
 
             #multi-support vector regresion
