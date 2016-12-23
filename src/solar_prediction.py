@@ -49,7 +49,10 @@ def main(_):
     with tf.Session() as sess:
         # initialize all variables
         tf.global_variables_initializer().run()
-        
+
+        path = tf.train.latest_checkpoint('.')
+        save_path = saver.restore(sess, path)
+
         for i in range(epoch_size):
             # test
             if i%config.test_step == 0:
@@ -61,6 +64,13 @@ def main(_):
                 mse, mae = MSE_And_MAE(test_target, test_result)
                 print "Test MSE: ", mse
                 print "Test MAE: ", mae
+
+                validation_set = reader.get_validation_set()
+                validation_feed = {x_ir:validation_set[0], x_mete:validation_set[1], x_sky_cam: validation_set[2], keep_prob:1.0}
+                validation_result = sess.run(prediction, feed_dict=validation_feed)
+                mse, mae = MSE_And_MAE(validation_set[3], validation_result)
+                print "Validation MSE: ", mse
+                print "Validation MAE: ", mae
 
                 ir_train_input, mete_train_input, sky_cam_train_input, train_target = reader.next_batch()
                 train_feed = {x_ir: ir_train_input, x_mete:mete_train_input, x_sky_cam:sky_cam_train_input, keep_prob:1.0}
@@ -94,6 +104,9 @@ def main(_):
             #     print "break"
 
             # print "validation loss: ", validation_loss
+            if i%100 == 0 and i > 0:
+                save_path = saver.save(sess, "model.ckpt")
+                print "save the model"
 
 if __name__ == "__main__":
     tf.app.run()
