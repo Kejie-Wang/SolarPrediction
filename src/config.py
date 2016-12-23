@@ -15,15 +15,15 @@ class Model_Config:
 
     # network params
     # the hidden size for three modalities, second level lstm and fully connected newwork
-    n_first_hidden = 2048
-    n_second_hidden = 1024
-    n_third_hidden = 1024
-    cnn_feat_size = 512
-    n_hidden_level2 = 2048
-    n_fully_connect_hidden = 4096
+    n_first_hidden = 3000
+    n_second_hidden = 2000
+    n_third_hidden = 2000
+    cnn_feat_size = 2000
+    n_hidden_level2 = 4000
+    n_fully_connect_hidden = 6000
 
     # learning rate
-    lr = 0.0001
+    lr = 5
 
     # data reader configuration
     # data_step: the lag between the two input series
@@ -40,7 +40,7 @@ class Model_Config:
     epoch_size = 3000
     test_num = 70
     print_step = 10
-    test_step = 200
+    test_step = 50
 
     width = 64
     height = 64
