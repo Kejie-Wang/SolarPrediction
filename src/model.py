@@ -3,6 +3,7 @@ __author__= 'WANG Kejie<wang_kejie@foxmail.com>'
 __date__ = '12/10/2016'
 
 import tensorflow as tf
+from lstm import BNLSTMCell
 
 class Model:
     """
@@ -26,12 +27,11 @@ class Model:
                 multi-support vector regression (considering the time dependency)
                 quantile regression (used as probabilistic regression)
     """
-    def __init__(self, data, target, keep_prob, config):
+    def __init__(self, data, target, training, config):
         """
         @brief The constructor of the model
         @param data: the input the data of the model (features) data[0], data[1], ... for multi-modality
                target: the groundtruth of the model
-               keep_prob: use dropout to avoid overfitting (https://www.cs.toronto.edu/%7Ehinton/absps/JMLRdropout.pdf)
                config: the configuration of the model and it may contains following values:
                     lr: learning rate
                     regressor: the regressor type chosen from {"lin", "msvr", "prob"}
@@ -42,14 +42,15 @@ class Model:
         #the input data
         self.data = data
         self.target = target
-        self.keep_prob = keep_prob
+        self.training = training
 
         #the network parameters
         self.n_first_hidden = config.n_first_hidden
         self.n_second_hidden = config.n_second_hidden
         self.n_hidden_level2 = config.n_hidden_level2
-        self.n_fully_connect_hidden = config.n_fully_connect_hidden
+        # self.n_fully_connect_hidden = config.n_fully_connect_hidden
         self.n_target = config.n_target
+
 
         #regressor type {'lin', 'msvr', 'prob'}
         self.regressor = config.regressor
@@ -81,11 +82,13 @@ class Model:
             # irradiance rnn lstm
             with tf.variable_scope("first_level1"):
                 cell_1 = tf.nn.rnn_cell.LSTMCell(self.n_first_hidden, state_is_tuple=True)
+                # cell_1 = BNLSTMCell(self.n_first_hidden, self.training)
                 outputs_1, state_1 = tf.nn.dynamic_rnn(cell_1, self.data[0], dtype=tf.float32)
 
             # meteorological rnn lstm
             with tf.variable_scope("first_level2"):
                 cell_2 = tf.nn.rnn_cell.LSTMCell(self.n_second_hidden, state_is_tuple=True)
+                # cell_2 = BNLSTMCell(self.n_second_hidden, self.training)
                 outputs_2, state_2 = tf.nn.dynamic_rnn(cell_2, self.data[1], dtype=tf.float32)
 
             # concat two features into a feature
@@ -96,6 +99,7 @@ class Model:
             #2nd level lstm
             with tf.variable_scope("second_level"):
                 cell_level2 = tf.nn.rnn_cell.LSTMCell(self.n_hidden_level2, state_is_tuple=True)
+                # cell_level2 = BNLSTMCell(self.n_hidden_level2, self.training)
                 outputs, state_level2 = tf.nn.dynamic_rnn(cell_level2, data_level2, dtype=tf.float32)
 
             #outputs: [batch_size, n_step, n_hidden] -->> [n_step, batch_size, n_hidden]
@@ -105,17 +109,22 @@ class Model:
             output = tf.gather(outputs, int(outputs.get_shape()[0]) - 1)
 
             # regression
-            w_fc1 = tf.Variable(tf.truncated_normal([self.n_hidden_level2, self.n_fully_connect_hidden]), dtype=tf.float32)
-            b_fc1 = tf.Variable(tf.constant(0.1, shape=[self.n_fully_connect_hidden]), dtype=tf.float32)
-            h_fc1 = tf.nn.relu(tf.matmul(output, w_fc1) + b_fc1)
+            with tf.variable_scope("regression"):
+                # w_fc1 = tf.Variable(tf.truncated_normal(shape=[self.n_hidden_level2, self.n_fully_connect_hidden], stddev=5.0), dtype=tf.float32)
+                # b_fc1 = tf.Variable(tf.constant(0.0, shape=[self.n_fully_connect_hidden]), dtype=tf.float32)
+                # h_fc1 = tf.sigmoid(tf.matmul(output, w_fc1) + b_fc1)
 
-            # h_fc_drop = tf.nn.dropout(h_fc1, self.keep_prob)
+                # h_fc_drop = tf.nn.dropout(h_fc1, self.keep_prob)
 
-            #multi-support vector regresion
-            self.weight = tf.Variable(tf.truncated_normal([self.n_fully_connect_hidden, self.n_target]), dtype=tf.float32)
-            bias = tf.Variable(tf.constant(0.1, shape=[self.n_target]), dtype=tf.float32)
+                #multi-support vector regresion
+                weight = tf.Variable(tf.truncated_normal(shape=[self.n_hidden_level2, self.n_target], stddev=2.0), dtype=tf.float32)
+                bias = tf.Variable(tf.constant(300.0, shape=[self.n_target]), dtype=tf.float32)
 
-            self._prediction = tf.matmul(h_fc1, self.weight) + bias
+                self._prediction = tf.matmul(output, weight) + bias
+
+                self.weight = weight
+                self.bias = bias
+
 
         return self._prediction
 
@@ -126,13 +135,7 @@ class Model:
         """
         if self._loss is None:
             if self.regressor == "lin": #only work on the target is one-dim
-                m = tf.matmul(tf.transpose(self.weight,[1,0]), self.weight)
-                diag = tf.matrix_diag_part(m)
-                w_sqrt_sum = tf.reduce_sum(diag)
-
-                self.w_sum = w_sqrt_sum
-
-                self._loss = tf.reduce_mean(tf.square(self.prediction - self.target))# + w_sqrt_sum
+                self._loss = tf.reduce_mean(tf.square(self.prediction - self.target)) + w_sqrt_sum * 10
             elif self.regressor == "msvr":
                 #compute the ||w||2
                 #use the w^T * W to compute and the sum the diag to get the result
@@ -144,10 +147,10 @@ class Model:
                 diff = self.prediction - self.target
                 err = tf.sqrt(tf.reduce_sum(tf.square(diff), reduction_indices=1)) - self.epsilon
                 err_greater_than_espilon = tf.cast(err > 0, tf.float32)
-                total_err = tf.reduce_sum(tf.mul(tf.square(err), err_greater_than_espilon))
+                total_err = tf.reduce_mean(tf.mul(tf.square(err), err_greater_than_espilon))
 
-                self._loss = total_err
-                # self._loss = 0.5 * w_sqrt_sum + self.C * total_err
+                self.w_sum = w_sqrt_sum
+                self._loss = self.C * w_sqrt_sum + total_err
             elif self.regressor == "quantile":
                 diff = self.prediction - self.target
                 coeff = tf.cast(diff>0, tf.float32) - self.quantile_rate
