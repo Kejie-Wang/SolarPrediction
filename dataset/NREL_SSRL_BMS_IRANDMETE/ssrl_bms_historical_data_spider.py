@@ -11,7 +11,7 @@ def download_file(url, file_path):
 		fp.write(data)
 		fp.close()
 
-ys, ms = 2006, 1
+ys, ms = 2000, 1
 ye, me = 2016, 7
 
 url = 'https://www.nrel.gov/midc/srrl_bms/historical/data/'
