@@ -21,9 +21,9 @@ if train_prop + validation_prop >= 1:
 	exit(0)
 
 #load the data
-ir_data = np.loadtxt('ir_data.csv', delimiter=',')
-mete_data = np.loadtxt('mete_data.csv', delimiter=',')
-target_data = np.loadtxt('target_data.csv', delimiter=',')
+ir_data = np.loadtxt('./200011201607/ir_data.csv', delimiter=',')
+mete_data = np.loadtxt('./200011201607/mete_data.csv', delimiter=',')
+target_data = np.loadtxt('./200011201607/target_data.csv', delimiter=',')
 
 data_hour_length = len(ir_data)
 data_day_length = data_hour_length / HOUR_IN_A_DAY
