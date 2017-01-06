@@ -8,10 +8,10 @@ import numpy as np
 
 HOUR_IN_A_DAY = 24
 n_step = 24
-h_ahead = 11
+h_ahead = 9
 n_target = 1
 
-hidden_size = 50
+hidden_size = 500
 lr = 0.005
 batch_size = 100
 epoch_size = 10000
@@ -26,6 +26,8 @@ target_validation_data_path = "../dataset/NREL_SSRL_BMS_IRANDMETE/input_data/val
 
 mete_test_data_path = "../dataset/NREL_SSRL_BMS_IRANDMETE/input_data/test/mete_test_data.csv"
 target_test_data_path = "../dataset/NREL_SSRL_BMS_IRANDMETE/input_data/test/target_test_data.csv"
+
+save_folder_path = "./same_day_pred_model/"
 
 def get_valid_index(features):
   num = len(features)
@@ -45,9 +47,9 @@ def MSE_And_MAE(targets, results):
 
 
 #load data
-mete_train_raw_data = np.loadtxt(mete_train_data_path, delimiter=',', dtype=np.float32)
-mete_validation_raw_data = np.loadtxt(mete_validation_data_path, delimiter=',', dtype=np.float32)
-mete_test_raw_data = np.loadtxt(mete_test_data_path, delimiter=',', dtype=np.float32)
+mete_train_raw_data = np.loadtxt(mete_train_data_path, delimiter=',')
+mete_validation_raw_data = np.loadtxt(mete_validation_data_path, delimiter=',')
+mete_test_raw_data = np.loadtxt(mete_test_data_path, delimiter=',')
 
 target_train_raw_data = np.loadtxt(target_train_data_path, delimiter=',')
 target_validation_raw_data = np.loadtxt(target_validation_data_path, delimiter=',')
@@ -70,7 +72,7 @@ test_valid_index = get_valid_index(mete_test_data)
 mete_train_data = mete_train_data[train_valid_index]
 target_train_data = target_train_data[train_valid_index]
 mete_validation_data = mete_validation_data[validation_valid_index]
-target_validation_data = target_train_data[validation_valid_index]
+target_validation_data = target_validation_data[validation_valid_index]
 mete_test_data = mete_test_data[test_valid_index]
 target_test_data = target_test_data[test_valid_index]
 
@@ -99,16 +101,19 @@ outputs = tf.transpose(outputs, [1, 0, 2])
 output = tf.gather(outputs, int(outputs.get_shape()[0]) - 1)
 
 with tf.variable_scope("regression"):
-  weight = tf.Variable(tf.truncated_normal(shape=[hidden_size, n_target], stddev=5.0), dtype=tf.float32)
+  weight = tf.Variable(tf.truncated_normal(shape=[hidden_size, n_target], stddev=2.0), dtype=tf.float32)
   bias = tf.Variable(tf.constant(0.0, shape=[n_target]), dtype=tf.float32)
 
 w_sum = tf.reduce_sum(tf.square(weight))
 
 prediction = tf.matmul(output, weight) + bias
-loss = tf.reduce_mean(tf.square(prediction - y_))+w_sum
+loss = tf.reduce_mean(tf.square(prediction - y_))+w_sum*10
 optimize = tf.train.AdamOptimizer(lr).minimize(loss)
 
 w_sum = tf.reduce_sum(tf.square(weight))
+
+#new a saver to save the model
+saver = tf.train.Saver()
 
 with tf.Session() as sess:
   # initialize all variables
@@ -116,10 +121,18 @@ with tf.Session() as sess:
   # if you are use the earlier version, please replace it with initial_all_variable
   tf.global_variables_initializer().run()
 
+  path = tf.train.latest_checkpoint(save_folder_path)
+  if not (path is None):
+      save_path = saver.restore(sess, path)
+      print "restore model"
+
   for i in range(epoch_size):
     index = np.random.choice(np.arange(train_num), batch_size, replace=False)
     mete_input, target = mete_train_data[index], target_train_data[index]
     sess.run(optimize, feed_dict={x_mete: mete_input, y_: target})
+
+    if i%10 == 0:
+        sess.run(optimize, feed_dict={x_mete: mete_validation_data, y_: target_validation_data})
 
     if i%print_step == 0:
       l = sess.run(loss, feed_dict={x_mete: mete_train_data, y_: target_train_data})
@@ -147,3 +160,7 @@ with tf.Session() as sess:
       print "test mse:",mse
       print "test mae", mae
       print "-----------finish the test----------"
+
+      if i%1000 == 0 and i>0:
+          save_path = saver.save(sess, save_folder_path + "model.ckpt")
+          print "save the model to ", save_path
