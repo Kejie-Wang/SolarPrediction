@@ -3,7 +3,6 @@ __author__= 'WANG Kejie<wang_kejie@foxmail.com>'
 __date__ = '12/10/2016'
 
 import tensorflow as tf
-from lstm import BNLSTMCell
 
 class Model:
     """
@@ -117,8 +116,8 @@ class Model:
                 # h_fc_drop = tf.nn.dropout(h_fc1, self.keep_prob)
 
                 #multi-support vector regresion
-                weight = tf.Variable(tf.truncated_normal(shape=[self.n_hidden_level2, self.n_target], stddev=2.0), dtype=tf.float32)
-                bias = tf.Variable(tf.constant(300.0, shape=[self.n_target]), dtype=tf.float32)
+                weight = tf.Variable(tf.truncated_normal(shape=[self.n_hidden_level2, self.n_target], stddev=1.5), dtype=tf.float32)
+                bias = tf.Variable(tf.constant(0.0, shape=[self.n_target]), dtype=tf.float32)
 
                 self._prediction = tf.matmul(output, weight) + bias
 

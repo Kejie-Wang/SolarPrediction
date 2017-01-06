@@ -20,17 +20,17 @@ class Model_Config:
     n_hidden_level2 = 600
 
     # learning rate
-    lr = 0.001
+    lr = 0.005
 
     # data reader configuration
     # data_step: the lag between the two input series
     # n_step: the length of the input time series
     # h_head: the lag between the input and output time series
     # n_target: the lenght of the output length if not equal one, use the msvr
-    batch_size = 200
+    batch_size = 10
     data_step = 24
     n_step = 72
-    h_ahead = 6
+    h_ahead = 12
     n_target = 4
 
     #train and test params
