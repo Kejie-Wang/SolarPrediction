@@ -1,0 +1,97 @@
+6,7,Global PSP,Flag,W/m2
+8,9,Global PSP (ventilated),Flag,W/m2
+10,11,Global LI-200 (primary),Flag,W/m2
+12,13,Global LI-200 (secondary),Flag,W/m2
+14,15,Global RG780 PSP,Flag,W/m2
+16,17,Global TSP-1,Flag,W/m2
+18,19,Global CM6b,Flag,W/m2
+20,21,Global SP-Lite,Flag,W/m2
+22,23,Global Quantum LI-190,Flag,µmol/s/m2
+24,25,Global 40-South PSP,Flag,W/m2
+26,27,Global 40-South LI-200,Flag,W/m2
+28,29,Global Normal CM-21,Flag,W/m2
+30,31,Global UV-Total TUVR,Flag,W/m2
+32,33,Global UVB 501A,Flag,W/m2
+34,35,Global UVE 501A (MED/hr),Flag,MED/hr
+36,37,Global UVB MS210W,Flag,W/m2
+38,39,Global UVA CUVA1,Flag,W/m2
+40,41,Global UVB CUVB1,Flag,W/m2
+42,43,Global UVA UV-S-A-T,Flag,W/m2
+44,45,Global UVB UV-S-B-T,Flag,W/m2
+46,47,Global UVB UVB-1,Flag,W/m2
+48,49,Global UVE 501A (Index),Flag,Index
+50,51,Direct NIP (primary),Flag,W/m2
+52,53,Direct NIP (secondary),Flag,W/m2
+54,55,Direct LI-201,Flag,W/m2
+56,57,Direct RG780 NIP,Flag,W/m2
+58,59,Direct CH1,Flag,W/m2
+60,61,Direct UV-Total TUVR,Flag,W/m2
+62,63,Direct UVA CUVA2,Flag,W/m2
+64,65,Direct UVB CUVB2,Flag,W/m2
+66,67,Photometer 500nm TWC,Flag,W/m2/nm
+68,69,Photometer 368nm MS110,Flag,W/m2/nm
+70,71,Photometer 500nm MS110,Flag,W/m2/nm
+72,73,Photometer 675nm MS110,Flag,W/m2/nm
+74,75,Photometer 778nm MS110,Flag,W/m2/nm
+76,77,Diffuse PSP (shadowband corr.),Flag,W/m2
+78,79,Diffuse PSP (ventilated),Flag,W/m2
+80,81,Diffuse 8-48 (ventilated),Flag,W/m2
+82,83,Diffuse CM-22 (ventilated),Flag,W/m2
+84,85,Diffuse UVB-1,Flag,W/m2
+86,87,Upwelling Shortwave PSP,Flag,W/m2
+88,89,Downwelling Infrared PIR (vent.),Flag,W/m2
+90,91,Downwelling Infrared CG4 (vent.),Flag,W/m2
+92,93,Upwelling Infrared PIR,Flag,W/m2
+94,95,Dry Bulb Temperature (Deck),Flag,oC
+96,97,Relative Humidity (Deck),Flag,%
+98,99,Dry Bulb Temperature (Tower),Flag,oC
+100,101,Relative Humidity (Tower),Flag,%
+102,103,Wind Chill Temerature,Flag,oC
+104,105,Vertical Wind Shear,Flag,1/s
+106,107,Wind Speed @ 10ft,Flag,m/s
+108,109,Wind Speed @ 10ft (Peak),Flag,m/s
+110,111,Wind Speed @ 22ft,Flag,m/s
+112,113,Wind Direction @ 22ft,Flag,o from N
+114,115,Wind Speed @ 22ft (Peak),Flag,m/s
+116,117,Wind Speed @ 42ft,Flag,m/s
+118,119,Wind Direction @ 42ft,Flag,o from N
+120,121,Wind Speed @ 42ft (Peak),Flag,m/s
+122,123,Station Pressure,Flag,mBar
+124,125,Est. Sea-Level Pressure,Flag,mBar
+126,127,Precipitation,Flag,mm
+128,129,Global CM3 (CNR1),Flag,W/m2
+130,131,Upwelling Shortwave CM3 (CNR1),Flag,W/m2
+132,133,Downwelling Infrared CG3 (CNR1),Flag,W/m2
+134,135,Upwelling Infrared CG3 (CNR1),Flag,W/m2
+136,137,Net Infrared CNR1 (atmos.),Flag,W/m2
+138,139,Global PSP (vent/zenith corr.),Flag,W/m2
+140,141,Turbidity 368nm MS110,Flag,-
+142,143,Turbidity 500nm MS110,Flag,-
+144,145,Turbidity 675nm MS110,Flag,-
+146,147,Turbidity 778nm MS110,Flag,-
+148,149,Turbidity 500nm TWC,Flag,-
+150,151,Diffuse PSP (vent/thermal corr.),Flag,W/m2
+152,153,AOD BroadBand,Flag,-
+154,155,Net Radiation (Eppley),Flag,W/m2
+156,157,Net Radiation (CNR1),Flag,W/m2
+158,159,Albedo (PSP),Flag,-
+160,161,Albedo (CNR1),Flag,-
+162,163,Zenith Angle,Flag,o
+164,165,Azimuth Angle,Flag,o
+166,167,Airmass,Flag,-
+168,169,Net Infrared PIRs (atmos.),Flag,W/m2
+170,171,AOD 500nm,Flag,-
+172,173,Global TSP-700,Flag,W/m2
+174,175,Upwelling Shortwave LI-200,Flag,W/m2
+176,177,Upwelling Quantum LI-190,Flag,W/m2
+178,179,Albedo (LI-200),Flag,-
+180,181,Albedo (LI-190),Flag,-
+182,183,Dew Point Temperature (Tower),Flag,oC
+184,185,Global 90-North PSP,Flag,W/m2
+186,187,Global 90-North LI-200,Flag,W/m2
+188,189,Global 90-East PSP,Flag,W/m2
+190,191,Global 90-East LI-200,Flag,W/m2
+192,193,Global 90-South PSP,Flag,W/m2
+194,195,Global 90-South LI-200,Flag,W/m2
+196,197,Global 90-West PSP,Flag,W/m2
+198,199,Global 90-West LI-200,Flag,W/m2
