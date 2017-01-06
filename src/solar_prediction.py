@@ -7,7 +7,8 @@ import numpy as np
 from config import Model_Config
 from reader import Reader
 from model import Model
-from util import MSE_And_MAE, test_figure_plot
+from util import MSE_And_MAE
+import os
 
 def do_eval(sess,
             prediction,
@@ -58,19 +59,27 @@ def main(_):
 
     best_test_result = None
 
+    save_folder_path = "./" + str(config.h_ahead) + "-" + str(config.h_ahead+config.n_target) + "/"
+    if not os.path.exists(save_folder_path):
+        os.mkdir(save_folder_path)
+    print save_folder_path
+
     with tf.Session() as sess:
         # initialize all variables
         tf.global_variables_initializer().run()
 
-        # path = tf.train.latest_checkpoint('.')
-        # save_path = saver.restore(sess, path)
+        path = tf.train.latest_checkpoint(save_folder_path)
+        if not (path is None):
+            save_path = saver.restore(sess, path)
+            print "restore model"
+
         ir_train_input, mete_train_input, train_target = reader.get_train_set()
         ir_test_input, mete_test_input, test_target = reader.get_test_set()
         ir_validation_input, mete_validation_input, validation_target = reader.get_validation_set()
 
         for i in range(epoch_size):
             # test
-            if i%config.test_step == 0:
+            if i%config.test_step == 0 and i>0:
                 test_result = do_eval(sess, prediction, x_ir, x_mete, training, [ir_test_input, mete_test_input])
                 mse, mae = MSE_And_MAE(test_target, test_result)
                 print "Test MSE: ", mse
@@ -91,6 +100,9 @@ def main(_):
                 print "\n"
                 print "bias of regression: ", sess.run(model.bias)
 
+                test_result_path = "../output/" + str(config.regressor) + "/" + str(config.h_ahead) + "_" + str(config.h_ahead + config.n_target) + ".res"
+                np.savetxt(test_result_path, best_test_result, fmt="%.4f", delimiter=',')
+
             #train
             batch = reader.next_batch()
             train_feed = {x_ir:batch[0], x_mete:batch[1], y_:batch[2],training: True}
@@ -108,8 +120,8 @@ def main(_):
             validation_loss = sess.run(loss,feed_dict=validation_feed)
 
             if i%50 == 0 and i > 0 and validation_loss < validation_last_loss:
-                save_path = saver.save(sess, "model.ckpt")
-                print "save the model"
+                save_path = saver.save(sess, save_folder_path + "model.ckpt")
+                print "save the model to ", save_path
 
             #compare the validation with the last loss
             if validation_loss < validation_last_loss:
