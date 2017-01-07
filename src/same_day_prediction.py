@@ -29,11 +29,11 @@ target_test_data_path = "../dataset/NREL_SSRL_BMS_IRANDMETE/input_data/test/targ
 
 save_folder_path = "./same_day_pred_model/"
 
-def get_valid_index(features):
+def get_valid_index(features, targets):
   num = len(features)
   missing_index = []
   for i in range(len(features)):
-    if True in np.isnan(features[i]):
+    if True in np.isnan(features[i]) or True in np.isnan(targets[i]):
       missing_index.append(i)
   print missing_index
   return np.setdiff1d(np.arange(num), np.array(missing_index))
@@ -64,9 +64,13 @@ mete_test_data = np.reshape(mete_test_raw_data, [-1, HOUR_IN_A_DAY, n_input_mete
 target_test_data = np.reshape(target_test_raw_data, [-1, HOUR_IN_A_DAY])[:, h_ahead:h_ahead+n_target]
 
 #get valid index
-train_valid_index = get_valid_index(mete_train_data)
-validation_valid_index = get_valid_index(mete_validation_data)
-test_valid_index = get_valid_index(mete_test_data)
+train_valid_index = get_valid_index(mete_train_data, target_train_data)
+validation_valid_index = get_valid_index(mete_validation_data, target_validation_data)
+test_valid_index = get_valid_index(mete_test_data, target_test_data)
+
+print "valid train number:", len(train_valid_index)
+print "valid validation number:", len(validation_valid_index)
+print "valid test number:", len(test_valid_index)
 
 #eliminate the missing value index
 mete_train_data = mete_train_data[train_valid_index]
@@ -107,7 +111,7 @@ with tf.variable_scope("regression"):
 w_sum = tf.reduce_sum(tf.square(weight))
 
 prediction = tf.matmul(output, weight) + bias
-loss = tf.reduce_mean(tf.square(prediction - y_))+w_sum*10
+loss = tf.reduce_mean(tf.square(prediction - y_))+w_sum*7
 optimize = tf.train.AdamOptimizer(lr).minimize(loss)
 
 w_sum = tf.reduce_sum(tf.square(weight))
