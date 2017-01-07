@@ -1,7 +1,7 @@
 Est. Sea-Level Pressure,124
 Relative Humidity (Deck),96
 Airmass,166
-Wind Speed @ 42ft (Peak),120
+Turbidity 500nm TWC,148
 Zenith Angle,162
 Precipitation,126
 Relative Humidity (Tower),100
@@ -10,9 +10,11 @@ AOD BroadBand,152
 Station Pressure,122
 Wind Speed @ 22ft,110
 Vertical Wind Shear,104
+Wind Chill Temperature,102
 Wind Speed @ 42ft,116
 Dry Bulb Temperature (Tower),98
 Wind Direction @ 22ft,112
 Dry Bulb Temperature (Deck),94
 Azimuth Angle,164
 Wind Direction @ 42ft,118
+Wind Speed @ 42ft (Peak),120

@@ -32,14 +32,14 @@ field_id_common_label = reduce(np.intersect1d, (field_id_0003[:,2], \
 #assert all common filed id are with the same index in the filed id
 field_id_common_mete = dict()
 field_id_common_irra = dict()
-
+print field_id_common_label
 for id in field_id_common_label:
     if id in meteorological_id:
         field_id_common_mete[id] = field_id_0608_dict[id]
     elif id in irradiance_id:
         field_id_common_irra[id] = field_id_0608_dict[id]
     else:
-        print id
+        print id, "--not in--"
     assert field_id_0003_dict[id] == field_id_0404_dict[id] and \
             field_id_0404_dict[id] == field_id_0405_dict[id] and \
             field_id_0405_dict[id] == field_id_0608_dict[id] and \

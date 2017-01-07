@@ -3,13 +3,16 @@ Global CMP22-1 (corr.)
 Global CMP22-2 (corr.)
 Global CMP11 (corr.)
 Global CM6b (corr.)
+Global CM6b
 Global CM3 (corr.)
+Global CM3 (CNR1)
 Global SR25
 Global MS-802 (corr.)
 Global MS-410 (corr.)
 Global MS-602 (corr.)
 Global SPP (vent/corr.)
 Global PSP (vent/corr.)
+Global PSP (vent/zenith corr.)
 Global GPP (corr.)
 Global TSP-700
 Global SPN1
@@ -17,6 +20,7 @@ Global SP Lite2
 Global ML-01
 Global LI-200R
 Global LI-200
+Global LI-200 (primary)
 Global SP-110
 Global Extraterrestrial (calc.)
 Global RG780 PSP
@@ -50,7 +54,7 @@ Global SE-POA LI-200
 Direct CHP1-1
 Direct CHP1-2
 Direct sNIP
-Direct NIP
+Direct NIP (primary)
 Direct DR02 (corr.)
 Direct MS-56
 Direct LI-201
@@ -61,11 +65,11 @@ Direct UV-Total TUVR
 Direct UVA CUVA2
 Direct UVB CUVB2
 Direct Quantum LI-190
-Diffuse 8-48 (vent.)
+Diffuse 8-48 (ventilated)
 Diffuse CM22-1 (vent/corr.)
 Diffuse CM22-2 (vent/corr.)
 Diffuse CMP11 (corr.)
-Diffuse PSP (sband corr.)
+Diffuse PSP (shadowband)
 Diffuse SPN1
 Downwelling Infrared PIR (vent.)
 Downwelling Infrared CG4 (vent.)
@@ -76,8 +80,10 @@ Upwelling Shortwave CM3
 Upwelling Shortwave LI-200
 Upwelling Quantum LI-190
 Net Infrared PIRs (atmos.)
+Net Infrared CNR1 (atmos.)
 Net Infrared K&Zs (atmos.)
 Net Radiation
+Net Radiation (Eppley)
 Effective Net (Eppley vent)
 Effective Net (K&Z vent)
 Effective Net (K&Z)

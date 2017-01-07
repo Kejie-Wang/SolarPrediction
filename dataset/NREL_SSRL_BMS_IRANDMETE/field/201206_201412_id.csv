@@ -1,10 +1,10 @@
 6,7,Global SE-POA LI-200,Flag,W/m2
 8,9,SE-POA Angle,Flag,o
-10,11,Global LI-200,Flag,W/m2
+10,11,Global LI-200 (primary),Flag,W/m2
 12,13,Global CM-22 (vent./corrected),Flag,W/m2
-14,15,Global RG780 PSP (vent./corrected),Flag,W/m2
+14,15,Global RG780 PSP,Flag,W/m2
 16,17,Global TSP-1,Flag,W/m2
-18,19,Global CM6b (corrected),Flag,W/m2
+18,19,Global CM6b,Flag,W/m2
 20,21,Global SP-Lite,Flag,W/m2
 22,23,Global Quantum LI-190,Flag,µmol/s/m2
 24,25,Global 40-South PSP,Flag,W/m2
@@ -33,9 +33,9 @@
 70,71,Cloud Cover (Total),Flag,%
 72,73,Cloud Cover (Opaque),Flag,%
 74,75,Wet Bulb Temperature (Tower),Flag,oC
-76,77,Diffuse PSP (shadowband/corrected),Flag,W/m2
+76,77,Diffuse PSP (shadowband),Flag,W/m2
 78,79,Direct Quantum LI-190,Flag,µmol/s/m2
-80,81,Diffuse 8-48 (vent.),Flag,W/m2
+80,81,Diffuse 8-48 (ventilated),Flag,W/m2
 82,83,Diffuse CM-22 (vent./corrected),Flag,W/m2
 84,85,Diffuse UV-Total CUV4,Flag,W/m2
 86,87,Upwelling Shortwave PSP,Flag,W/m2
@@ -46,7 +46,7 @@
 96,97,Relative Humidity (Deck),Flag,%
 98,99,Dry Bulb Temperature (Tower),Flag,oC
 100,101,Relative Humidity (Tower),Flag,%
-102,103,Wind Chill Temperature (Tower),Flag,oC
+102,103,Wind Chill Temperature,Flag,oC
 104,105,Vertical Wind Shear,Flag,1/s
 106,107,Wind Speed @ 6ft,Flag,m/s
 108,109,Wind Direction @ 6ft,Flag,o from N
@@ -60,16 +60,16 @@
 124,125,Est. Sea-Level Pressure,Flag,mBar
 126,127,Precipitation,Flag,mm
 128,129,Global CM3 (CNR1),Flag,W/m2
-130,131,Upwelling Shortwave CM3 (CNR1),Flag,W/m2
+130,131,Upwelling Shortwave CM3,Flag,W/m2
 132,133,Downwelling Infrared CG3 (CNR1),Flag,W/m2
 134,135,Upwelling Infrared CG3 (CNR1),Flag,W/m2
-136,137,Net Infrared K&Zs (atmos.),Flag,W/m2
-138,139,Global PSP (vent./corrected),Flag,W/m2
-140,141,Global PSP (corrected),Flag,W/m2
+136,137,Net Infrared CNR1 (atmos.),Flag,W/m2
+138,139,Global PSP (vent/zenith corr.),Flag,W/m2
+140,141,Global PSP,Flag,W/m2
 142,143,Global SPN1,Flag,W/m2
 144,145,Diffuse SPN1,Flag,W/m2
 146,147,Snow Depth,Flag,cm
-148,149,AOD 500nm TWC,Flag,-
+148,149,Turbidity 500nm TWC,Flag,-
 150,151,Diffuse PSP (vent/thermal corr.),Flag,W/m2
 152,153,AOD BroadBand,Flag,-
 154,155,Net Radiation (Eppley),Flag,W/m2

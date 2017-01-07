@@ -28,7 +28,7 @@ month_end = 7
 
 #data path
 raw_data_path = "./raw_data/"
-save_data_path = "./input_data/" + str(year_start) + str(month_start).rjust(2, '0') + str(year_end) + str(month_end).rjust(2, 0) + '/'
+save_data_path = "./input_data/" + str(year_start) + str(month_start).rjust(2, '0') + str(year_end) + str(month_end).rjust(2, '0') + '/'
 
 #field id path params
 ir_field_file_path = "field/irradiance_common_id.csv"

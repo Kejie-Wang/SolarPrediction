@@ -9,6 +9,7 @@ Wet Bulb Temperature (Tower)
 Dew Point Temperature (Tower)
 Wind Chill Temperature (Tower)
 Wind Chill Temperature (Deck)
+Wind Chill Temperature
 Relative Humidity (Tower)
 Relative Humidity (Deck)
 Relative Humidity (SE)
@@ -36,6 +37,7 @@ Precipitation (Accumulated)
 Snow Depth
 AOD TWC (500nm)
 AOD Estimated (500nm)
+Turbidity 500nm TWC
 AOD BroadBand
 Broadband Turbidity
 Albedo (CM21)
