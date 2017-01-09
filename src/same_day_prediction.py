@@ -5,6 +5,7 @@ __date__ = '05/01/2017'
 
 import tensorflow as tf
 import numpy as np
+import os
 
 HOUR_IN_A_DAY = 24
 n_step = 24
@@ -18,12 +19,15 @@ epoch_size = 10000
 print_step = 200
 test_step = 500
 
+ir_train_data_path = "../dataset/NREL_SSRL_BMS_IRANDMETE/input_data/train/ir_train_data.csv"
 mete_train_data_path = "../dataset/NREL_SSRL_BMS_IRANDMETE/input_data/train/mete_train_data.csv"
 target_train_data_path = "../dataset/NREL_SSRL_BMS_IRANDMETE/input_data/train/target_train_data.csv"
 
+ir_validation_data_path = "../dataset/NREL_SSRL_BMS_IRANDMETE/input_data/validation/ir_validation_data.csv"
 mete_validation_data_path = "../dataset/NREL_SSRL_BMS_IRANDMETE/input_data/validation/mete_validation_data.csv"
 target_validation_data_path = "../dataset/NREL_SSRL_BMS_IRANDMETE/input_data/validation/target_validation_data.csv"
 
+ir_test_data_path = "../dataset/NREL_SSRL_BMS_IRANDMETE/input_data/test/ir_test_data.csv"
 mete_test_data_path = "../dataset/NREL_SSRL_BMS_IRANDMETE/input_data/test/mete_test_data.csv"
 target_test_data_path = "../dataset/NREL_SSRL_BMS_IRANDMETE/input_data/test/target_test_data.csv"
 
@@ -47,13 +51,24 @@ def MSE_And_MAE(targets, results):
 
 
 #load data
+ir_train_raw_data = np.loadtxt(ir_train_data_path, delimiter=',')
+ir_validation_raw_data = np.loadtxt(ir_validation_data_path, delimiter=',')
+ir_test_raw_data = np.loadtxt(ir_test_data_path, delimiter=',')
+
 mete_train_raw_data = np.loadtxt(mete_train_data_path, delimiter=',')
 mete_validation_raw_data = np.loadtxt(mete_validation_data_path, delimiter=',')
 mete_test_raw_data = np.loadtxt(mete_test_data_path, delimiter=',')
 
-target_train_raw_data = np.loadtxt(target_train_data_path, delimiter=',')
-target_validation_raw_data = np.loadtxt(target_validation_data_path, delimiter=',')
-target_test_raw_data = np.loadtxt(target_test_data_path, delimiter=',')
+# target_train_raw_data = np.loadtxt(target_train_data_path, delimiter=',')
+# target_validation_raw_data = np.loadtxt(target_validation_data_path, delimiter=',')
+# target_test_raw_data = np.loadtxt(target_test_data_path, delimiter=',')
+
+target_train_raw_data = ir_train_raw_data[:, 10]
+target_test_raw_data = ir_test_raw_data[:,10]
+target_validation_raw_data = ir_validation_raw_data[:,10]
+
+np.set_printoptions(precision=4, suppress=True)
+print sorted(target_test_raw_data[np.arange(h_ahead, len(target_test_raw_data), HOUR_IN_A_DAY)])
 
 n_input_mete = mete_train_raw_data.shape[1]
 mete_train_data = np.reshape(mete_train_raw_data, [-1, HOUR_IN_A_DAY, n_input_mete])
@@ -118,6 +133,9 @@ w_sum = tf.reduce_sum(tf.square(weight))
 
 #new a saver to save the model
 saver = tf.train.Saver()
+
+if not os.path.exists(save_folder_path):
+  os.mkdir(save_folder_path)
 
 with tf.Session() as sess:
   # initialize all variables
