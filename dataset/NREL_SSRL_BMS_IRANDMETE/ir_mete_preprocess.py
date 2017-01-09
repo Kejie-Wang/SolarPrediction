@@ -24,7 +24,7 @@ MISSING_VALUE = -99999
 year_start = 2000
 month_start = 11
 year_end = 2016
-month_end = 7
+month_end = 11
 
 #data path
 raw_data_path = "./raw_data/"
