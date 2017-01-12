@@ -154,7 +154,7 @@ class Model:
             elif self.regressor == "quantile":
                 diff = self.prediction - self.target
                 coeff = tf.cast(diff>0, tf.float32) - self.quantile_rate
-                self._loss = tf.reduce_sum(tf.mul(tf.diff, tf.coeff))
+                self._loss = tf.reduce_sum(tf.mul(diff, coeff))
 
         return self._loss
 
