@@ -46,8 +46,6 @@
 96,97,Relative Humidity (Deck),Flag,%
 98,99,Dry Bulb Temperature (Tower),Flag,oC
 100,101,Relative Humidity (Tower),Flag,%
-102,103,Wind Chill Temperature,Flag,oC
-104,105,Vertical Wind Shear,Flag,1/s
 106,107,Wind Speed @ 10ft,Flag,m/s
 108,109,Wind Speed @ 10ft (Peak),Flag,m/s
 110,111,Wind Speed @ 22ft,Flag,m/s
