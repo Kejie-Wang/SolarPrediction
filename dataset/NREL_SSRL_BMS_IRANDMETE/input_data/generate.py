@@ -9,21 +9,22 @@ import time
 
 HOUR_IN_A_DAY = 24
 
-if len(sys.argv) != 3:
+if len(sys.argv) != 4:
 	print "Error: please input the train and validation set prop, e.g. python generate.py 0.9 0.05"
 	exit(0)
 
-train_prop = float(sys.argv[1])
-validation_prop = float(sys.argv[2])
+data_dir = sys.argv[1] + "/"
+train_prop = float(sys.argv[2])
+validation_prop = float(sys.argv[3])
 
 if train_prop + validation_prop >= 1:
 	print "Error: the sum of train and validation proportion can NOT larger than 1"
 	exit(0)
 
 #load the data
-ir_data = np.loadtxt('ir_data.csv', delimiter=',')
-mete_data = np.loadtxt('mete_data.csv', delimiter=',')
-target_data = np.loadtxt('target_data.csv', delimiter=',')
+ir_data = np.loadtxt(data_dir + 'ir_data.csv', delimiter=',')
+mete_data = np.loadtxt(data_dir + 'mete_data.csv', delimiter=',')
+target_data = np.loadtxt(data_dir + 'target_data.csv', delimiter=',')
 
 data_hour_length = len(ir_data)
 data_day_length = data_hour_length / HOUR_IN_A_DAY

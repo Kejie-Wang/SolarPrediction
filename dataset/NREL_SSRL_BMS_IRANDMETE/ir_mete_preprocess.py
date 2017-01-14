@@ -6,7 +6,6 @@ __date__ = '20/11/2016'
 
 """
 ir_mete_preprocess.py
-
 """
 __author__  = "WANG Kejie"
 __email__ = "wang_kejie@foxmail.com"
@@ -21,20 +20,20 @@ HOUR_IN_A_DAY = 24
 MONTH_IN_A_YEAR = 12
 MISSING_VALUE = -99999
 
+#dataset range configuration
+year_start = 2000
+month_start = 11
+year_end = 2016
+month_end = 11
+
 #data path
 raw_data_path = "./raw_data/"
-save_data_path = "./input_data/"
+save_data_path = "./input_data/" + str(year_start) + str(month_start).rjust(2, '0') + str(year_end) + str(month_end).rjust(2, '0') + '/'
 
 #field id path params
 ir_field_file_path = "field/irradiance_common_id.csv"
 mete_field_file_path = "field/meteorological_common_id.csv"
 target_field_file_path = "field/target_id.csv"
-
-#dataset range configuration
-year_start = 2008
-month_start = 1
-year_end = 2016
-month_end = 7
 
 #load the common field of the irradiance and meteorological
 ir_field = np.loadtxt(ir_field_file_path, dtype='str', delimiter=',', comments=None, ndmin=2)[:,1].astype(int)
