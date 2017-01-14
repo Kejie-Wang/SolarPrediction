@@ -11,7 +11,7 @@ import sys
 HOUR_IN_A_DAY = 24
 
 n_step = 24
-h_ahead = 18
+h_ahead = 9
 n_target = 1
 
 model = "lin"
@@ -21,7 +21,7 @@ epsilon = 10
 quantile_rate = 0.3
 
 hidden_size = 500
-lr = 0.005
+lr = 0.001
 batch_size = 100
 epoch_size = 10000
 print_step = 200
@@ -148,8 +148,8 @@ keep_prob = tf.placeholder(tf.float32)
 
 with tf.variable_scope("first_level1"):
     cell = tf.nn.rnn_cell.LSTMCell(hidden_size, state_is_tuple=True)
-    # cell = tf.nn.rnn_cell.DropoutWrapper(cell=cell, output_keep_prob=keep_prob)
-    # cell = tf.nn.rnn_cell.MultiRNNCell(cells=[cell] * 2, state_is_tuple=True)
+    cell = tf.nn.rnn_cell.DropoutWrapper(cell=cell, output_keep_prob=keep_prob)
+    cell = tf.nn.rnn_cell.MultiRNNCell(cells=[cell] * 2, state_is_tuple=True)
     outputs, state = tf.nn.dynamic_rnn(cell, x_mete, dtype=tf.float32)
 
     # cell_fw = tf.nn.rnn_cell.LSTMCell(hidden_size, state_is_tuple=True)
@@ -220,6 +220,9 @@ with tf.Session() as sess:
     mete_input, target = mete_train_data[index], target_train_data[index]
     sess.run(optimize, feed_dict={x_mete: mete_input, y_: target, keep_prob: 0.8})
 
+    if i%25 == 0:
+        sess.run(optimize, feed_dict={x_mete: mete_validation_data, y_: target_validation_data, keep_prob: 0.8})
+
     if i%print_step == 0:
       l = sess.run(loss, feed_dict={x_mete: mete_train_data, y_: target_train_data, keep_prob: 1.0})
       print "Step %d train loss: %.4f" %(i, l)
@@ -230,13 +233,13 @@ with tf.Session() as sess:
       if model == "msvr" or model == "lin":
           mse, mae = sess.run([MSE, MAE], feed_dict={x_mete: mete_train_data, y_: target_train_data, keep_prob: 1.0})
           print "train mse:",mse
-          print "train mae", mae
+          print "train mae:", mae
 
           l = sess.run(loss, feed_dict={x_mete: mete_validation_data, y_: target_validation_data, keep_prob: 1.0})
           print "validation loss: %.4f" %(l)
           mse, mae = sess.run([MSE, MAE], feed_dict={x_mete: mete_validation_data, y_: target_validation_data, keep_prob: 1.0})
           print "validation mse:",mse
-          print "validation mae", mae
+          print "validation mae:", mae
 
           l = sess.run(loss, feed_dict={x_mete: mete_test_data, y_: target_test_data, keep_prob: 1.0})
           print "test loss: %.4f" %(l)
