@@ -254,7 +254,7 @@ class Reader:
         """
         @brief return the total dataset
         """
-        return return self.ir_train_data, \
+        return self.ir_train_data, \
                 self.mete_train_data, \
                 self.path2image(self.sky_cam_train_data), \
                 self.target_train_data
@@ -266,7 +266,7 @@ class Reader:
         """
         @brief return the total validation dataset
         """
-        return return self.ir_validation_data, \
+        return self.ir_validation_data, \
                 self.mete_validation_data, \
                 self.path2image(self.sky_cam_validation_data), \
                 self.target_validation_data
