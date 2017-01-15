@@ -29,7 +29,7 @@ class Model:
                 multi-support vector regression (considering the time dependency)
                 quantile regression (used as probabilistic regression)
     """
-    def __init__(self, data, target, training, config):
+    def __init__(self, data, target, config):
         """
         @brief The constructor of the model
         @param data: the input the data of the model (features) data[0], data[1], ... for multi-modality
@@ -44,15 +44,16 @@ class Model:
         #the input data
         self.data = data
         self.target = target
-        self.training = training
 
         #the network parameters
         self.n_first_hidden = config.n_first_hidden
         self.n_second_hidden = config.n_second_hidden
         self.n_third_hidden = config.n_third_hidden
         self.n_hidden_level2 = config.n_hidden_level2
-        # self.n_fully_connect_hidden = config.n_fully_connect_hidden
         self.n_target = config.n_target
+
+        #modality configuration
+        self.modality = config.modality
 
         #regressor type {'lin', 'msvr', 'prob'}
         self.regressor = config.regressor
@@ -137,44 +138,52 @@ class Model:
         NOTE: You can easily treat it as an member of this class (model.prediction to refer)
         """
         if self._prediction is None:
+
             # build the graph
+
+            output_first_level = []
+
+            # The first modality
             # irradiance rnn lstm
-            with tf.variable_scope("first_level1"):
-                cell_1 = tf.nn.rnn_cell.LSTMCell(self.n_first_hidden, state_is_tuple=True)
-                # cell_1 = BNLSTMCell(self.n_first_hidden, self.training)
-                outputs_1, state_1 = tf.nn.dynamic_rnn(cell_1, self.data[0], dtype=tf.float32)
+            if self.modality[0] == 1:
+                with tf.variable_scope("first_level1"):
+                    cell_1 = tf.nn.rnn_cell.LSTMCell(self.n_first_hidden, state_is_tuple=True)
+                    outputs_1, state_1 = tf.nn.dynamic_rnn(cell_1, self.data[0], dtype=tf.float32)
+                    output_first_level.append(outputs_1)
 
+            # The second modality
             # meteorological rnn lstm
-            with tf.variable_scope("first_level2"):
-                cell_2 = tf.nn.rnn_cell.LSTMCell(self.n_second_hidden, state_is_tuple=True)
-                # cell_2 = BNLSTMCell(self.n_second_hidden, self.training)
-                outputs_2, state_2 = tf.nn.dynamic_rnn(cell_2, self.data[1], dtype=tf.float32)
+            if self.modality[1] == 1:
+                with tf.variable_scope("first_level2"):
+                    cell_2 = tf.nn.rnn_cell.LSTMCell(self.n_second_hidden, state_is_tuple=True)
+                    outputs_2, state_2 = tf.nn.dynamic_rnn(cell_2, self.data[1], dtype=tf.float32)
+                    output_first_level.append(outputs_2)
 
-            #[batch_size, 1, 1024*n_step]
-            #cnn
-            cnn_out = None
-            with tf.variable_scope('image') as scope:
-                for i in range(self.n_step):
-                    tmp_out = self.cnn_model(self.data[2][:, i, :, :], self.keep_prob)
-                    tmp_out = tf.reshape(tmp_out, [-1, 1, self.cnn_feat_size])
-                    if cnn_out is None:
-                        cnn_out = tmp_out
-                    else:
-                        cnn_out = tf.concat(1, [cnn_out,tmp_out])
-                    scope.reuse_variables()
+            # The third modality
+            if self.modality[2] == 1:
+                cnn_out = None
+                with tf.variable_scope('image') as scope:
+                    for i in range(self.n_step):
+                        tmp_out = self.cnn_model(self.data[2][:, i, :, :], self.keep_prob)
+                        tmp_out = tf.reshape(tmp_out, [-1, 1, self.cnn_feat_size])
+                        if cnn_out is None:
+                            cnn_out = tmp_out
+                        else:
+                            cnn_out = tf.concat(1, [cnn_out,tmp_out])
+                        scope.reuse_variables()
 
-            #image rnn lstm
-            with tf.variable_scope("first_level3"):
-                cell_3 = tf.nn.rnn_cell.LSTMCell(self.n_third_hidden, state_is_tuple=True)
-                outputs_3, state3 = tf.nn.dynamic_rnn(cell_3, cnn_out, dtype=tf.float32)
+                #image rnn lstm
+                with tf.variable_scope("first_level3"):
+                    cell_3 = tf.nn.rnn_cell.LSTMCell(self.n_third_hidden, state_is_tuple=True)
+                    outputs_3, state3 = tf.nn.dynamic_rnn(cell_3, cnn_out, dtype=tf.float32)
+                    output_first_level.append(outputs_3)
 
             # concat two features into a feature
-            data_level2 = tf.concat(2, [outputs_1, outputs_2, outputs_3])
+            data_level2 = tf.concat(2, output_first_level)
 
             #2nd level lstm
             with tf.variable_scope("second_level"):
                 cell_level2 = tf.nn.rnn_cell.LSTMCell(self.n_hidden_level2, state_is_tuple=True)
-                # cell_level2 = BNLSTMCell(self.n_hidden_level2, self.training)
                 outputs, state_level2 = tf.nn.dynamic_rnn(cell_level2, data_level2, dtype=tf.float32)
 
             #outputs: [batch_size, n_step, n_hidden] -->> [n_step, batch_size, n_hidden]
@@ -187,12 +196,10 @@ class Model:
             with tf.variable_scope("regression"):
                 weight = tf.Variable(tf.truncated_normal(shape=[self.n_hidden_level2, self.n_target], stddev=1.5), dtype=tf.float32)
                 bias = tf.Variable(tf.constant(0.0, shape=[self.n_target]), dtype=tf.float32)
-
                 self._prediction = tf.matmul(output, weight) + bias
 
                 self.weight = weight
                 self.bias = bias
-
 
         return self._prediction
 
@@ -211,7 +218,6 @@ class Model:
                 diag = tf.matrix_diag_part(m)
                 w_sqrt_sum = tf.reduce_sum(diag)
 
-
                 #the loss of the train set
                 diff = self.prediction - self.target
                 err = tf.sqrt(tf.reduce_sum(tf.square(diff), reduction_indices=1)) - self.epsilon
@@ -224,7 +230,7 @@ class Model:
                 diff = self.prediction - self.target
                 coeff = tf.cast(diff>0, tf.float32) - self.quantile_rate
                 self._loss = tf.reduce_sum(tf.mul(diff, coeff))
-                
+
         return self._loss
 
 

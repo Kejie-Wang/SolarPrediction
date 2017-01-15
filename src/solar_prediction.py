@@ -21,7 +21,6 @@ def do_eval(sess,
         x_ir_placeholder: input_data[0],
         x_mete_placeholder: input_data[1],
         x_sky_cam_placeholder: input_data[2],
-        training_placeholder: False
     }
     return sess.run(prediction, feed_dict=feed_dict)
 
@@ -49,11 +48,9 @@ def main(_):
 
     y_ = tf.placeholder(tf.float32, [None, n_target])
 
-    training = tf.placeholder(tf.bool)
-
     reader = Reader(config)
 
-    model = Model([x_ir, x_mete], y_, training, config)
+    model = Model([x_ir, x_mete, x_sky_cam], y_, config)
 
     prediction = model.prediction
     loss = model.loss
@@ -113,12 +110,12 @@ def main(_):
 
             #train
             batch = reader.next_batch()
-            train_feed = {x_ir:batch[0], x_mete:batch[1], x_sky_cam: batch[2], y_:batch[3], training: True}
+            train_feed = {x_ir:batch[0], x_mete:batch[1], x_sky_cam: batch[2], y_:batch[3]}
             sess.run(optimize, feed_dict=train_feed)
 
             #print step
             if i%config.print_step == 0:
-                train_feed = {x_ir:batch[0], x_mete:batch[1], x_sky_cam: batch[2], y_:batch[3], training: False}
+                train_feed = {x_ir:batch[0], x_mete:batch[1], x_sky_cam: batch[2], y_:batch[3]}
                 print "train loss:",sess.run(loss, feed_dict=train_feed)
                 print "validation loss: ", validation_last_loss
 
@@ -127,8 +124,7 @@ def main(_):
             validation_feed = {x_ir: ir_validation_input, \
                                 x_mete: mete_validation_input, \
                                 x_sky_cam: sky_cam_validation_input, \
-                                y_: target_validation_data,\
-                                training: False}
+                                y_: validation_target}
             validation_loss = sess.run(loss, feed_dict=validation_feed)
 
             if i%50 == 0 and i > 0 and validation_loss < validation_last_loss:

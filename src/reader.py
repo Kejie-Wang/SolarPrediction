@@ -50,7 +50,7 @@ class Reader:
             shape_targets.append(targets[ptr - n_target:ptr])
         return np.array(shape_targets)
 
-    def _get_valid_index(self, ir_features, mete_features, targets):
+    def _get_valid_index(self, ir_features, mete_features,  targets):
         """
         @brief get the valida index of the features since there are some missing value in some feature and target
         @param ir_features, mete_features, sky_cam_features: the three kinds of feautures
@@ -61,7 +61,6 @@ class Reader:
         for i in range(len(targets)):
             if (True in np.isnan(ir_features[i]))  or \
                 (True in np.isnan(mete_features[i])) or  \
-                (MISSING_VALUE in sky_cam_features[i]) or \
                 (True in np.isnan(targets[i])):
                 missing_index.append(i)
         print missing_index
@@ -147,9 +146,6 @@ class Reader:
         self.target_train_data = target_train_data[train_index]
         self.target_validation_data = target_validation_data[validation_index]
         self.target_test_data = target_test_data[test_index]
-
-        print len(self.ir_train_data)
-        print len(self.target_train_data)
 
         #add some noise
         #since some features are always a unchanged data which stddve is zero
