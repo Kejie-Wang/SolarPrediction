@@ -24,6 +24,9 @@ class Model_Config:
     # learning rate
     lr = 0.005
 
+    #modal configuration
+    modality = [1, 1, 1]
+
     # data reader configuration
     # data_step: the lag between the two input series
     # n_step: the length of the input time series
