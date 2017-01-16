@@ -36,7 +36,6 @@ class Feature_Reader:
         for i in range(num):
             if (True in np.isnan(feature[i])) or MISSING_VALUE in feature[i]:
                 missing_index.append(i)
-        print missing_index
 
         return np.setdiff1d(np.arange(num), np.array(missing_index))
 
