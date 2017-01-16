@@ -142,11 +142,11 @@ class Model:
             # build the graph
 
             output_first_level = []
-
             # The first modality
             # irradiance rnn lstm
             if self.modality[0] == 1:
-                with tf.variable_scope("first_level1"):
+                print "The irradiance modality is used"
+                with tf.variable_scope("irradiance"):
                     cell_1 = tf.nn.rnn_cell.LSTMCell(self.n_first_hidden, state_is_tuple=True)
                     outputs_1, state_1 = tf.nn.dynamic_rnn(cell_1, self.data[0], dtype=tf.float32)
                     output_first_level.append(outputs_1)
@@ -154,15 +154,17 @@ class Model:
             # The second modality
             # meteorological rnn lstm
             if self.modality[1] == 1:
-                with tf.variable_scope("first_level2"):
+                print "The meteorological modality is used"
+                with tf.variable_scope("meteorological"):
                     cell_2 = tf.nn.rnn_cell.LSTMCell(self.n_second_hidden, state_is_tuple=True)
                     outputs_2, state_2 = tf.nn.dynamic_rnn(cell_2, self.data[1], dtype=tf.float32)
                     output_first_level.append(outputs_2)
 
             # The third modality
             if self.modality[2] == 1:
+                print "The sky camera image modality is used"
                 cnn_out = None
-                with tf.variable_scope('image') as scope:
+                with tf.variable_scope('sky_cam_image_cnn') as scope:
                     for i in range(self.n_step):
                         tmp_out = self.cnn_model(self.data[2][:, i, :, :], self.keep_prob)
                         tmp_out = tf.reshape(tmp_out, [-1, 1, self.cnn_feat_size])
@@ -173,7 +175,7 @@ class Model:
                         scope.reuse_variables()
 
                 #image rnn lstm
-                with tf.variable_scope("first_level3"):
+                with tf.variable_scope("sky_cam_image_lstm"):
                     cell_3 = tf.nn.rnn_cell.LSTMCell(self.n_third_hidden, state_is_tuple=True)
                     outputs_3, state3 = tf.nn.dynamic_rnn(cell_3, cnn_out, dtype=tf.float32)
                     output_first_level.append(outputs_3)
@@ -243,3 +245,11 @@ class Model:
             optimizer = tf.train.AdamOptimizer(self.lr)
             self._optimize = optimizer.minimize(self.loss)
         return self._optimize
+
+    @property
+    def mae(self):
+        return tf.reduce_mean(tf.abs(self.prediction - self.target))
+
+    @property
+    def rmse(self):
+        return tf.reduce_sqrt(tf.reduce_mean(tf.square(self.prediction, self.target)))

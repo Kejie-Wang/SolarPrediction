@@ -45,5 +45,7 @@ class Model_Config:
     print_step = 10
     test_step = 50
 
+    n_input_ir = 31
+    n_input_mete = 20
     width = 64
     height = 64
