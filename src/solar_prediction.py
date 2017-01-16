@@ -10,19 +10,27 @@ from model import Model
 from util import MSE_And_MAE
 import os
 
+def fill_feed_dict(x_ir_placeholder, x_mete_placeholder, x_sky_cam_placeholder, y_, feed_data, modality):
+    feed_dict = {}
+    index = 0
+    if modality[0] == 1:
+        feed_dict[x_ir_placeholder] = feed_data[index]
+        index += 1
+    if modality[1] == 1:
+        feed_dict[x_ir_placeholder] = feed_data[index]
+        index += 1
+    if modality[2] == 1:
+        feed_dict[x_sky_cam_placeholder] = feed_data[index]
+        index += 1
+    feed_dict[y_] = feed_data[index]
+
+    return feed_dict
+
 def do_eval(sess,
-            prediction,
-            x_ir_placeholder,
-            x_mete_placeholder,
-            x_sky_cam_placeholder,
-            training_placeholder,
-            input_data):
-    feed_dict = {
-        x_ir_placeholder: input_data[0],
-        x_mete_placeholder: input_data[1],
-        x_sky_cam_placeholder: input_data[2],
-    }
-    return sess.run(prediction, feed_dict=feed_dict)
+            evaluation,
+            feed_dict):
+
+    return sess.run(evaluation, feed_dict=feed_dict)
 
 def main(_):
     #get the config
@@ -30,16 +38,14 @@ def main(_):
 
     n_step = config.n_step
     n_target = config.n_target
-    n_input_ir = 36
-    n_input_mete = 26
 
+    n_input_ir = config.n_input_ir
+    n_input_mete = config.n_input_mete
     width_image = config.width
     height_image = config.height
 
     epoch_size = config.epoch_size
     print_step = config.print_step
-
-    test_num = config.test_num
 
     #define the input and output
     x_ir = tf.placeholder(tf.float32, [None, n_step, n_input_ir])
@@ -60,7 +66,6 @@ def main(_):
     saver = tf.train.Saver()
 
     validation_last_loss = float('inf')
-
     best_test_result = None
 
     save_folder_path = "./" + str(config.h_ahead) + "-" + str(config.h_ahead+config.n_target) + "/"
@@ -77,14 +82,15 @@ def main(_):
             save_path = saver.restore(sess, path)
             print "restore model"
 
-        ir_train_input, mete_train_input, sky_cam_train_input, train_target = reader.get_train_set()
-        ir_test_input, mete_test_input, sky_cam_test_input, test_target = reader.get_test_set()
-        ir_validation_input, mete_validation_input, sky_cam_validation_input, validation_target = reader.get_validation_set()
+        train_set = reader.get_train_set()
+        validation_set = reader.get_validation_set()
+        test_set = reader.get_test_set()
 
         for i in range(epoch_size):
             # test
             if i%config.test_step == 0:
-                test_result = do_eval(sess, prediction, x_ir, x_mete, x_sky_cam_placeholder, training, [ir_test_input, mete_test_input, sky_cam_test_input])
+                feed_dict = fill_feed_dict(x_ir, x_mete, x_sky_cam_placeholder, y_, test_set)
+                test_result = do_eval(sess, prediction, feed_dict)
                 #calculate the mse and mae
                 mse, mae = MSE_And_MAE(test_target, test_result)
                 print "Test MSE: ", mse
