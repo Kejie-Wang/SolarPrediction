@@ -34,12 +34,20 @@ class Model_Config:
     # n_target: the lenght of the output length if not equal one, use the msvr
     batch_size = 100
     data_step = 24
-    n_step = 24
-    h_ahead = 9 - 24
+
+    n_step_1 = 72
+    n_step_2 = 24
+    n_step_3 = 72
+
+    n_shift_1 = 72
+    n_shift_2 = 0
+    n_shift_3 = 72
+
+    h_ahead = 9
     n_target = 1
 
     #train and test params
-    epoch_size = 3000
+    epoch_size = 10000
 
     print_step = 200
     test_step = 500

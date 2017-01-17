@@ -103,7 +103,7 @@ def main(_):
             #train
             batch = reader.next_batch()
             feed_dict = fill_feed_dict(x_ir, x_mete, x_sky_cam, y_, keep_prob, batch, 0.8, modality)
-            sess.run(model.optimize, feed_dict=train_feed)
+            sess.run(model.optimize, feed_dict=feed_dict)
 
             #print step
             if i%config.print_step == 0:
