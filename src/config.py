@@ -4,7 +4,7 @@ class Model_Config:
     # lin: linear regression using MSE as loss function
     # msvr: multiple support vector regression
     # prob: probabilistic regression (use the quantile regression algorithms)
-    regressor = "msvr"
+    regressor = "lin"
 
     # msvr params
     epsilon = 10
@@ -16,7 +16,7 @@ class Model_Config:
     # network params
     # the hidden size for three modalities, second level lstm and fully connected newwork
     n_first_hidden = 100
-    n_second_hidden = 80
+    n_second_hidden = 500
     n_third_hidden = 100
     cnn_feat_size = 200
     n_hidden_level2 = 400
@@ -25,7 +25,7 @@ class Model_Config:
     lr = 0.005
 
     #modal configuration
-    modality = [1, 1, 1]
+    modality = [0, 1, 0]
 
     # data reader configuration
     # data_step: the lag between the two input series
@@ -34,16 +34,15 @@ class Model_Config:
     # n_target: the lenght of the output length if not equal one, use the msvr
     batch_size = 100
     data_step = 24
-    n_step = 72
-    h_ahead = 9
+    n_step = 24
+    h_ahead = 9 - 24
     n_target = 1
 
     #train and test params
     epoch_size = 3000
-    test_num = 70
 
-    print_step = 10
-    test_step = 50
+    print_step = 200
+    test_step = 500
 
     n_input_ir = 31
     n_input_mete = 20
