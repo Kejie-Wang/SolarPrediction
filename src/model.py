@@ -142,9 +142,9 @@ class Model:
         if self._prediction is None:
 
             # build the graph
-
             output_first_level = []
             output_first_level_size = 0
+
             # The first modality
             # irradiance rnn lstm
             if self.modality[0] == 1:
@@ -192,9 +192,9 @@ class Model:
             data_level2 = tf.concat(2, output_first_level)
 
             #2nd level lstm
-            with tf.variable_scope("second_level"):
-                cell_level2 = tf.nn.rnn_cell.LSTMCell(self.n_hidden_level2, state_is_tuple=True)
-                outputs, state_level2 = tf.nn.dynamic_rnn(cell_level2, data_level2, dtype=tf.float32)
+            # with tf.variable_scope("second_level"):
+            #     cell_level2 = tf.nn.rnn_cell.LSTMCell(self.n_hidden_level2, state_is_tuple=True)
+            #     outputs, state_level2 = tf.nn.dynamic_rnn(cell_level2, data_level2, dtype=tf.float32)
 
             #outputs: [batch_size, n_step, n_hidden] -->> [n_step, batch_size, n_hidden]
             #output: [batch_size, n_hidden]
