@@ -23,7 +23,7 @@ mete_test_data_path = "../dataset/NREL_SSRL_BMS_IRANDMETE/input_data/test/mete_t
 sky_cam_test_data_path = "../dataset/NREL_SSRL_BMS_SKY_CAM/input_data/test/sky_cam_test_data.csv"
 target_test_data_path = "../dataset/NREL_SSRL_BMS_IRANDMETE/input_data/test/target_test_data.csv"
 
-sky_cam_raw_data_path = '../dataset/NREL_SSRL_BMS_SKY_CAM/raw_data/SSRL_SKY_CAM_IMAGE/'
+sky_cam_raw_data_path = '../dataset/NREL_SSRL_BMS_SKY_CAM/raw_data/'
 
 class Reader:
 
@@ -106,7 +106,7 @@ class Reader:
         mean = cv2.resize(np.load('mean.npy'), (self.height, self.width)).astype('float32')
         std = cv2.resize(np.load('std.npy'), (self.height, self.width)).astype('float32')
         img_list = []
-        for idx in len(data):
+        for idx in range(len(data)):
             img = []
             for i in range(self.n_step):
                 if data[idx, i] == -11111:
