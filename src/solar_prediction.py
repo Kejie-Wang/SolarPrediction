@@ -17,7 +17,7 @@ def fill_feed_dict(x_ir_placeholder, x_mete_placeholder, x_sky_cam_placeholder, 
         feed_dict[x_ir_placeholder] = feed_data[index]
         index += 1
     if modality[1] == 1:
-        feed_dict[x_ir_placeholder] = feed_data[index]
+        feed_dict[x_mete_placeholder] = feed_data[index]
         index += 1
     if modality[2] == 1:
         feed_dict[x_sky_cam_placeholder] = feed_data[index]
@@ -39,6 +39,8 @@ def main(_):
     n_step = config.n_step
     n_target = config.n_target
 
+    modality = config.modality
+
     n_input_ir = config.n_input_ir
     n_input_mete = config.n_input_mete
     width_image = config.width
@@ -51,16 +53,11 @@ def main(_):
     x_ir = tf.placeholder(tf.float32, [None, n_step, n_input_ir])
     x_mete = tf.placeholder(tf.float32, [None, n_step, n_input_mete])
     x_sky_cam = tf.placeholder(tf.float32, [None, n_step, height_image, width_image])
-
     y_ = tf.placeholder(tf.float32, [None, n_target])
 
     reader = Reader(config)
 
     model = Model([x_ir, x_mete, x_sky_cam], y_, config)
-
-    prediction = model.prediction
-    loss = model.loss
-    optimize = model.optimize
 
     #new a saver to save the model
     saver = tf.train.Saver()
@@ -86,52 +83,43 @@ def main(_):
         validation_set = reader.get_validation_set()
         test_set = reader.get_test_set()
 
+        train_feed = fill_feed_dict(x_ir, x_mete, x_sky_cam, y_, train_set, modality)
+        validation_feed = fill_feed_dict(x_ir, x_mete, x_sky_cam, y_, validation_set, modality)
+        test_feed = fill_feed_dict(x_ir, x_mete, x_sky_cam, y_, test_set, modality)
+
         for i in range(epoch_size):
             # test
             if i%config.test_step == 0:
-                feed_dict = fill_feed_dict(x_ir, x_mete, x_sky_cam_placeholder, y_, test_set)
-                test_result = do_eval(sess, prediction, feed_dict)
                 #calculate the mse and mae
-                mse, mae = MSE_And_MAE(test_target, test_result)
-                print "Test MSE: ", mse
-                print "Test MAE: ", mae
+                rmse, mae = do_eval(sess, [model.rmse, model.mae], test_feed)
+                print "Test RMSE: ", rmse, "Test MAE: ", mae
 
-                validation_result = do_eval(sess, prediction, x_ir, x_mete, x_sky_cam_placeholder, training, [ir_validation_input, mete_validation_input, sky_cam_validation_input])
-                mse, mae = MSE_And_MAE(validation_target, validation_result)
-                print "Validation MSE: ", mse
-                print "Validation MAE: ", mae
+                rmse, mae = do_eval(sess, [model.rmse, model.mae], validation_feed)
+                print "Validation RMSE: ", rmse, "Validation MAE: ", mae
 
-                train_result = do_eval(sess, prediction, x_ir, x_mete, x_sky_cam_placeholder, training, [ir_train_input, mete_train_input, sky_cam_train_input])
-                mse, mae = MSE_And_MAE(train_target, train_result)
-                print "Train MSE: ", mse
-                print "Train MAE: ", mae
+                rmse, mae = do_eval(sess, [model.rmse, model.mae], train_feed)
+                print "Train RMSE: ", rmse, "Train MAE: ", mae
 
                 print "sum of w: ", sess.run(model.w_sum)
 
                 print "\n"
                 print "bias of regression: ", sess.run(model.bias)
 
-                test_result_path = "../output/" + str(config.regressor) + "/" + str(config.h_ahead) + "_" + str(config.h_ahead + config.n_target) + ".res"
-                np.savetxt(test_result_path, best_test_result, fmt="%.4f", delimiter=',')
+                # test_result_path = "../output/" + str(config.regressor) + "/" + str(config.h_ahead) + "_" + str(config.h_ahead + config.n_target) + ".res"
+                # np.savetxt(test_result_path, best_test_result, fmt="%.4f", delimiter=',')
 
             #train
             batch = reader.next_batch()
-            train_feed = {x_ir:batch[0], x_mete:batch[1], x_sky_cam: batch[2], y_:batch[3]}
-            sess.run(optimize, feed_dict=train_feed)
+            feed_dict = fill_feed_dict(x_ir, x_mete, x_sky_cam, y_, batch, modality)
+            sess.run(model.optimize, feed_dict=train_feed)
 
             #print step
             if i%config.print_step == 0:
-                train_feed = {x_ir:batch[0], x_mete:batch[1], x_sky_cam: batch[2], y_:batch[3]}
-                print "train loss:",sess.run(loss, feed_dict=train_feed)
+                print "train loss:",do_eval(sess, model.loss, feed_dict)
                 print "validation loss: ", validation_last_loss
 
             #validation
-            validation_set = reader.get_validation_set()
-            validation_feed = {x_ir: ir_validation_input, \
-                                x_mete: mete_validation_input, \
-                                x_sky_cam: sky_cam_validation_input, \
-                                y_: validation_target}
-            validation_loss = sess.run(loss, feed_dict=validation_feed)
+            validation_loss = do_eval(sess, model.loss, validation_feed)
 
             if i%50 == 0 and i > 0 and validation_loss < validation_last_loss:
                 save_path = saver.save(sess, save_folder_path + "model.ckpt")
@@ -140,7 +128,7 @@ def main(_):
             #compare the validation with the last loss
             if validation_loss < validation_last_loss:
                 validation_last_loss = validation_loss
-                best_test_result = do_eval(sess, prediction, x_ir, x_mete, x_sky_cam_placeholder, training, [ir_test_input, mete_test_input, sky_cam_test_input])
+                best_test_result = do_eval(sess, model.prediction, test_feed)
 
             # print "validation loss: ", validation_loss
             if i%100 == 0 and i > 0:
@@ -148,8 +136,8 @@ def main(_):
                 print "save the model"
 
 
-        test_result_path = "../output/" + str(config.regressor) + "/" + str(config.h_ahead) + "_" + str(config.h_ahead + config.n_target) + ".res"
-        np.savetxt(test_result_path, best_test_result, fmt="%.4f", delimiter=',')
+        # test_result_path = "../output/" + str(config.regressor) + "/" + str(config.h_ahead) + "_" + str(config.h_ahead + config.n_target) + ".res"
+        # np.savetxt(test_result_path, best_test_result, fmt="%.4f", delimiter=',')
 
 if __name__ == "__main__":
     tf.app.run()
