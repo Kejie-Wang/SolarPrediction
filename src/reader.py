@@ -154,7 +154,7 @@ class Reader:
         if self.modality[1] == 1:
             train_set.append((self.mete_train_data - self.mete_mean) / self.mete_std)
         if self.modality[2] == 1:
-            train_set.append(path2image(self.sky_cam_train_data))
+            train_set.append(self.path2image(self.sky_cam_train_data))
         train_set.append(self.target_train_data)
 
         return train_set
@@ -172,7 +172,7 @@ class Reader:
         if self.modality[1] == 1:
             validation_set.append((self.mete_validation_data - self.mete_mean) / self.mete_std)
         if self.modality[2] == 1:
-            validation_set.append(path2image(self.sky_cam_validation_data))
+            validation_set.append(self.path2image(self.sky_cam_validation_data))
         validation_set.append(self.target_validation_data)
 
         return validation_set
@@ -181,13 +181,13 @@ class Reader:
         """
         @brief return a test set in the specific test num
         """
-        validation_set = []
+        test_set = []
         if self.modality[0] == 1:
             test_set.append((self.ir_test_data - self.ir_mean) / self.ir_std)
         if self.modality[1] == 1:
             test_set.append((self.mete_test_data - self.mete_mean) / self.mete_std)
         if self.modality[2] == 1:
-            test_set.append(path2image(self.sky_cam_test_data))
+            test_set.append(self.path2image(self.sky_cam_test_data))
         test_set.append(self.target_test_data)
 
         return test_set
