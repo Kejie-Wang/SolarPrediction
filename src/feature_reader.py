@@ -16,14 +16,14 @@ class Feature_Reader:
             shape_features.append(features[ptr - n_step:ptr])
         return np.array(shape_features)
 
-    def _read_feature_data(self, data_path, n_step, data_step):
+    def _read_feature_data(self, data_path, n_step, data_step, shift_day):
         raw_data = np.loadtxt(data_path, delimiter=',', ndmin=2)
-        return self._feature_reshape(raw_data, n_step, data_step)
+        return self._feature_reshape(raw_data, n_step, data_step)[shift_day:]
 
-    def _read_dataset_feature(self, train_path, validation_path, test_path, n_step, data_step):
-        return self._read_feature_data(train_path, n_step, data_step), \
-               self._read_feature_data(validation_path, n_step, data_step), \
-               self._read_feature_data(test_path, n_step, data_step)
+    def _read_dataset_feature(self, train_path, validation_path, test_path, n_step, data_step, shift_day):
+        return self._read_feature_data(train_path, n_step, data_step, shift_day), \
+               self._read_feature_data(validation_path, n_step, data_step, shift_day), \
+               self._read_feature_data(test_path, n_step, data_step, shift_day)
 
     def _get_valid_index(self, feature):
         """
@@ -39,10 +39,10 @@ class Feature_Reader:
 
         return np.setdiff1d(np.arange(num), np.array(missing_index))
 
-    def __init__(self, train_path, validation_path, test_path, n_step, data_step):
+    def __init__(self, train_path, validation_path, test_path, n_step, data_step, shift_day):
         #load the data and feature reshape
         #feature reshape: accumulate several(n_step) features into a new feature for the input the lstm
-        self.train_data, self.validation_data, self.test_data = self._read_dataset_feature(train_path, validation_path, test_path, n_step, data_step)
+        self.train_data, self.validation_data, self.test_data = self._read_dataset_feature(train_path, validation_path, test_path, n_step, data_step, shift_day)
         #get the valid data index
         self.train_index = self._get_valid_index(self.train_data)
         self.validation_index = self._get_valid_index(self.validation_data)
