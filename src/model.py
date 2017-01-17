@@ -80,6 +80,10 @@ class Model:
         self.input_height = config.height
         self.cnn_feat_size = config.cnn_feat_size
 
+        self.prediction
+        self.optimize
+        self.loss
+
     def weight_varible(self, shape):
         # initial = tf.truncated_normal(shape, stddev=0.1)
         weights = tf.get_variable('weights', shape, initializer=tf.random_normal_initializer(0, stddev=0.1))
@@ -96,7 +100,7 @@ class Model:
     def max_pool_2x2(self, x):
         return tf.nn.max_pool(x, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='SAME')
 
-    def cnn_model(self, x, keep_prob):
+    def cnn_model(self, x):
         x_image = tf.reshape(x, [-1, self.input_height, self.input_width, 1])
         with tf.variable_scope('conv_1') as scope:
             W_conv1 = self.weight_varible([5, 5, 1, 32])
@@ -126,10 +130,7 @@ class Model:
             h_pool2_flat = tf.reshape(h_pool2, [-1, s[1]*s[2]*s[3]])
             h_fc1 = tf.nn.relu(tf.matmul(h_pool2_flat, W_fc1) + b_fc1)
 
-            # dropout
-            h_fc1_drop = tf.nn.dropout(h_fc1, keep_prob)
-
-            return h_fc1_drop
+            return h_fc1;
 
     @property
     def prediction(self):
@@ -166,7 +167,7 @@ class Model:
                 cnn_out = None
                 with tf.variable_scope('sky_cam_image_cnn') as scope:
                     for i in range(self.n_step):
-                        tmp_out = self.cnn_model(self.data[2][:, i, :, :], self.keep_prob)
+                        tmp_out = self.cnn_model(self.data[2][:, i, :, :])
                         tmp_out = tf.reshape(tmp_out, [-1, 1, self.cnn_feat_size])
                         if cnn_out is None:
                             cnn_out = tmp_out
@@ -252,4 +253,4 @@ class Model:
 
     @property
     def rmse(self):
-        return tf.reduce_sqrt(tf.reduce_mean(tf.square(self.prediction, self.target)))
+        return tf.sqrt(tf.reduce_mean(tf.square(self.prediction - self.target)))
