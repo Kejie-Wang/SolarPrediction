@@ -29,7 +29,7 @@ class Model:
                 multi-support vector regression (considering the time dependency)
                 quantile regression (used as probabilistic regression)
     """
-    def __init__(self, data, target, config):
+    def __init__(self, data, target, keep_prob, config):
         """
         @brief The constructor of the model
         @param data: the input the data of the model (features) data[0], data[1], ... for multi-modality
@@ -44,6 +44,7 @@ class Model:
         #the input data
         self.data = data
         self.target = target
+        self.keep_prob = keep_prob
 
         #the network parameters
         self.n_first_hidden = config.n_first_hidden
@@ -143,10 +144,12 @@ class Model:
             # build the graph
 
             output_first_level = []
+            output_first_level_size = 0
             # The first modality
             # irradiance rnn lstm
             if self.modality[0] == 1:
                 print "The irradiance modality is used"
+                output_first_level_size += self.n_first_hidden
                 with tf.variable_scope("irradiance"):
                     cell_1 = tf.nn.rnn_cell.LSTMCell(self.n_first_hidden, state_is_tuple=True)
                     outputs_1, state_1 = tf.nn.dynamic_rnn(cell_1, self.data[0], dtype=tf.float32)
@@ -156,14 +159,18 @@ class Model:
             # meteorological rnn lstm
             if self.modality[1] == 1:
                 print "The meteorological modality is used"
+                output_first_level_size += self.n_second_hidden
                 with tf.variable_scope("meteorological"):
                     cell_2 = tf.nn.rnn_cell.LSTMCell(self.n_second_hidden, state_is_tuple=True)
+                    cell_2 = tf.nn.rnn_cell.DropoutWrapper(cell=cell_2, output_keep_prob=self.keep_prob)
+                    cell_2 = tf.nn.rnn_cell.MultiRNNCell(cells=[cell_2] * 2, state_is_tuple=True)
                     outputs_2, state_2 = tf.nn.dynamic_rnn(cell_2, self.data[1], dtype=tf.float32)
                     output_first_level.append(outputs_2)
 
             # The third modality
             if self.modality[2] == 1:
                 print "The sky camera image modality is used"
+                output_first_level_size += self.n_third_hidden
                 cnn_out = None
                 with tf.variable_scope('sky_cam_image_cnn') as scope:
                     for i in range(self.n_step):
@@ -192,15 +199,16 @@ class Model:
             #outputs: [batch_size, n_step, n_hidden] -->> [n_step, batch_size, n_hidden]
             #output: [batch_size, n_hidden]
             #get the last output of the lstm as the input of the regressor
-            outputs = tf.transpose(outputs, [1, 0, 2])
+            outputs = tf.transpose(data_level2, [1, 0, 2])
             output = tf.gather(outputs, int(outputs.get_shape()[0]) - 1)
 
             # regression
             with tf.variable_scope("regression"):
-                weight = tf.Variable(tf.truncated_normal(shape=[self.n_hidden_level2, self.n_target], stddev=1.5), dtype=tf.float32)
+                weight = tf.Variable(tf.truncated_normal(shape=[output_first_level_size, self.n_target], stddev=2.0), dtype=tf.float32)
                 bias = tf.Variable(tf.constant(0.0, shape=[self.n_target]), dtype=tf.float32)
                 self._prediction = tf.matmul(output, weight) + bias
 
+                self.w_sum = tf.reduce_sum(tf.square(weight))
                 self.weight = weight
                 self.bias = bias
 
@@ -213,22 +221,15 @@ class Model:
         """
         if self._loss is None:
             if self.regressor == "lin": #only work on the target is one-dim
-                self._loss = tf.reduce_mean(tf.square(self.prediction - self.target)) + w_sqrt_sum * 10
+                self._loss = tf.reduce_mean(tf.square(self.prediction - self.target)) + self.w_sum * 3
             elif self.regressor == "msvr":
-                #compute the ||w||2
-                #use the w^T * W to compute and the sum the diag to get the result
-                m = tf.matmul(tf.transpose(self.weight,[1,0]), self.weight)
-                diag = tf.matrix_diag_part(m)
-                w_sqrt_sum = tf.reduce_sum(diag)
-
                 #the loss of the train set
                 diff = self.prediction - self.target
                 err = tf.sqrt(tf.reduce_sum(tf.square(diff), reduction_indices=1)) - self.epsilon
                 err_greater_than_espilon = tf.cast(err > 0, tf.float32)
                 total_err = tf.reduce_mean(tf.mul(tf.square(err), err_greater_than_espilon))
 
-                self.w_sum = w_sqrt_sum
-                self._loss = self.C * w_sqrt_sum + total_err
+                self._loss = self.C * self.w_sum + total_err
             elif self.regressor == "quantile":
                 diff = self.prediction - self.target
                 coeff = tf.cast(diff>0, tf.float32) - self.quantile_rate
