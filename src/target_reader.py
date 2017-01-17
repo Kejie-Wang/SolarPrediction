@@ -13,7 +13,7 @@ class Target_Reader:
         @return an aggregated and synchronized targets in shape [new_target_num, n_target, target_dim]
         """
         shape_targets = []
-        for ptr in range(n_step + h_ahead + n_target, len(targets), data_step):
+        for ptr in range(n_step + h_ahead + n_target, len(targets)+1, data_step):
             shape_targets.append(targets[ptr - n_target:ptr])
         return np.array(shape_targets)
 

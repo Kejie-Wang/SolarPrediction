@@ -12,7 +12,7 @@ class Feature_Reader:
         @return a new batch shaped features in shape [new_feature_num, n_step, feature_dim]
         """
         shape_features = []
-        for ptr in range(n_step, len(features), data_step):
+        for ptr in range(n_step, len(features)+1, data_step):
             shape_features.append(features[ptr - n_step:ptr])
         return np.array(shape_features)
 
