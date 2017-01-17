@@ -3,7 +3,7 @@ import numpy as np
 MISSING_VALUE = -99999
 
 class Target_Reader:
-    def _target_reshape(self, targets, n_step, h_ahead, data_step, n_target):
+    def _target_reshape(self, targets, max_shift, h_ahead, data_step, n_target):
         """
         @brief aggregate the multiple features as a new target for multiple output and synchronize the target with the features
         @param targets The input targets in shape [target_num, target_dim] ##now target_num=1
@@ -13,18 +13,18 @@ class Target_Reader:
         @return an aggregated and synchronized targets in shape [new_target_num, n_target, target_dim]
         """
         shape_targets = []
-        for ptr in range(n_step + h_ahead + n_target, len(targets)+1, data_step):
+        for ptr in range(max_shift + h_ahead + n_target, len(targets)+1, data_step):
             shape_targets.append(targets[ptr - n_target:ptr])
         return np.array(shape_targets)
 
-    def _read_target_data(self, data_path, config):
+    def _read_target_data(self, data_path, max_shift, h_ahead, data_step, n_target):
         raw_data = np.loadtxt(data_path, delimiter=',')
-        return self._target_reshape(raw_data, config.n_step, config.h_ahead, config.data_step, config.n_target)
+        return self._target_reshape(raw_data, max_shift, h_ahead, data_step, n_target)
 
-    def _read_dataset_target(self, train_path, validation_path, test_path, config):
-        return self._read_target_data(train_path, config), \
-               self._read_target_data(validation_path, config), \
-               self._read_target_data(test_path, config)
+    def _read_dataset_target(self, train_path, validation_path, test_path, max_shift, h_ahead, data_step, n_target):
+        return self._read_target_data(train_path, max_shift, h_ahead, data_step, n_target), \
+               self._read_target_data(validation_path, max_shift, h_ahead, data_step, n_target), \
+               self._read_target_data(test_path, max_shift, h_ahead, data_step, n_target)
 
     def _get_valid_index(self, target):
         """
@@ -40,8 +40,8 @@ class Target_Reader:
 
         return np.setdiff1d(np.arange(num), np.array(missing_index))
 
-    def __init__(self, train_path, validation_path, test_path, config):
-        self.train_data, self.validation_data, self.test_data = self._read_dataset_target(train_path, validation_path, test_path, config)
+    def __init__(self, train_path, validation_path, test_path, max_shift, h_ahead, data_step, n_target):
+        self.train_data, self.validation_data, self.test_data = self._read_dataset_target(train_path, validation_path, test_path, max_shift, h_ahead, data_step, n_target)
 
         #get the valid data index
         self.train_index = self._get_valid_index(self.train_data)

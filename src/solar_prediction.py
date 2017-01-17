@@ -9,6 +9,7 @@ from config import Model_Config
 from reader import Reader
 from model import Model
 from util import MSE_And_MAE
+import time
 
 def fill_feed_dict(x_ir_placeholder, x_mete_placeholder, x_sky_cam_placeholder, y_, keep_prob_placeholder, feed_data, keep_prob, modality):
     feed_dict = {}
@@ -37,7 +38,10 @@ def main(_):
     #get the config
     config = Model_Config()
 
-    n_step = config.n_step
+    n_step_1 = config.n_step_1
+    n_step_2 = config.n_step_2
+    n_step_3 = config.n_step_3
+
     n_target = config.n_target
 
     modality = config.modality
@@ -51,9 +55,9 @@ def main(_):
     print_step = config.print_step
 
     #define the input and output
-    x_ir = tf.placeholder(tf.float32, [None, n_step, n_input_ir])
-    x_mete = tf.placeholder(tf.float32, [None, n_step, n_input_mete])
-    x_sky_cam = tf.placeholder(tf.float32, [None, n_step, height_image, width_image])
+    x_ir = tf.placeholder(tf.float32, [None, n_step_1, n_input_ir])
+    x_mete = tf.placeholder(tf.float32, [None, n_step_2, n_input_mete])
+    x_sky_cam = tf.placeholder(tf.float32, [None, n_step_3, height_image, width_image])
 
     keep_prob = tf.placeholder(tf.float32)
     y_ = tf.placeholder(tf.float32, [None, n_target])
@@ -85,7 +89,8 @@ def main(_):
         np.set_printoptions(precision=4)
         test_target = test_set[-1]
         for i in sorted(test_target):
-            print test_target[i]
+            print i,
+        print "\n"
 
         for i in range(epoch_size):
             # test
@@ -105,18 +110,20 @@ def main(_):
             feed_dict = fill_feed_dict(x_ir, x_mete, x_sky_cam, y_, keep_prob, batch, 0.8, modality)
             sess.run(model.optimize, feed_dict=feed_dict)
 
+            if i%25 == 0:
+                sess.run(model.optimize, feed_dict=validation_feed)
             #print step
             if i%config.print_step == 0:
-                print "train loss:",do_eval(sess, model.loss, feed_dict)
-                print "validation loss: ", validation_last_loss
+                print "Step", i, "train loss:",do_eval(sess, model.loss, feed_dict)
+                # print "validation loss: ", validation_last_loss
 
             #validation
-            validation_loss = do_eval(sess, model.loss, validation_feed)
-
-            #compare the validation with the last loss
-            if validation_loss < validation_last_loss:
-                validation_last_loss = validation_loss
-                best_test_result = do_eval(sess, model.prediction, test_feed)
+            # validation_loss = do_eval(sess, model.loss, validation_feed)
+            #
+            # #compare the validation with the last loss
+            # if validation_loss < validation_last_loss:
+            #     validation_last_loss = validation_loss
+            #     best_test_result = do_eval(sess, model.prediction, test_feed)
 
 if __name__ == "__main__":
     tf.app.run()
