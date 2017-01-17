@@ -76,7 +76,10 @@ class Model:
         self._loss = None
 
 
-        self.n_step = config.n_step
+        self.n_step_1 = config.n_step_1
+        self.n_step_2 = config.n_step_2
+        self.n_step_3 = config.n_step_3
+
         self.input_width = config.width
         self.input_height = config.height
         self.cnn_feat_size = config.cnn_feat_size
@@ -133,6 +136,15 @@ class Model:
 
             return h_fc1;
 
+    def _get_last_out(self, outputs):
+        #outputs: [batch_size, n_step, n_hidden] -->> [n_step, batch_size, n_hidden]
+        #output: [batch_size, n_hidden]
+        #get the last output of the lstm as the input of the regressor
+        outputs = tf.transpose(outputs, [1, 0, 2])
+        output = tf.gather(outputs, int(outputs.get_shape()[0]) - 1)
+
+        return output
+
     @property
     def prediction(self):
         """
@@ -153,7 +165,7 @@ class Model:
                 with tf.variable_scope("irradiance"):
                     cell_1 = tf.nn.rnn_cell.LSTMCell(self.n_first_hidden, state_is_tuple=True)
                     outputs_1, state_1 = tf.nn.dynamic_rnn(cell_1, self.data[0], dtype=tf.float32)
-                    output_first_level.append(outputs_1)
+                    output_first_level.append(self._get_last_out(outputs_1))
 
             # The second modality
             # meteorological rnn lstm
@@ -165,7 +177,7 @@ class Model:
                     cell_2 = tf.nn.rnn_cell.DropoutWrapper(cell=cell_2, output_keep_prob=self.keep_prob)
                     cell_2 = tf.nn.rnn_cell.MultiRNNCell(cells=[cell_2] * 2, state_is_tuple=True)
                     outputs_2, state_2 = tf.nn.dynamic_rnn(cell_2, self.data[1], dtype=tf.float32)
-                    output_first_level.append(outputs_2)
+                    output_first_level.append(self._get_last_out(outputs_2))
 
             # The third modality
             if self.modality[2] == 1:
@@ -173,7 +185,7 @@ class Model:
                 output_first_level_size += self.n_third_hidden
                 cnn_out = None
                 with tf.variable_scope('sky_cam_image_cnn') as scope:
-                    for i in range(self.n_step):
+                    for i in range(self.n_step_3):
                         tmp_out = self.cnn_model(self.data[2][:, i, :, :])
                         tmp_out = tf.reshape(tmp_out, [-1, 1, self.cnn_feat_size])
                         if cnn_out is None:
@@ -186,21 +198,15 @@ class Model:
                 with tf.variable_scope("sky_cam_image_lstm"):
                     cell_3 = tf.nn.rnn_cell.LSTMCell(self.n_third_hidden, state_is_tuple=True)
                     outputs_3, state3 = tf.nn.dynamic_rnn(cell_3, cnn_out, dtype=tf.float32)
-                    output_first_level.append(outputs_3)
+                    output_first_level.append(self._get_last_out(outputs_3))
 
             # concat two features into a feature
-            data_level2 = tf.concat(2, output_first_level)
+            output = tf.concat(1, output_first_level)
 
             #2nd level lstm
             # with tf.variable_scope("second_level"):
             #     cell_level2 = tf.nn.rnn_cell.LSTMCell(self.n_hidden_level2, state_is_tuple=True)
             #     outputs, state_level2 = tf.nn.dynamic_rnn(cell_level2, data_level2, dtype=tf.float32)
-
-            #outputs: [batch_size, n_step, n_hidden] -->> [n_step, batch_size, n_hidden]
-            #output: [batch_size, n_hidden]
-            #get the last output of the lstm as the input of the regressor
-            outputs = tf.transpose(data_level2, [1, 0, 2])
-            output = tf.gather(outputs, int(outputs.get_shape()[0]) - 1)
 
             # regression
             with tf.variable_scope("regression"):
