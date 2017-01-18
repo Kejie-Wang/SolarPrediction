@@ -164,6 +164,8 @@ class Model:
                 output_first_level_size += self.n_first_hidden
                 with tf.variable_scope("irradiance"):
                     cell_1 = tf.nn.rnn_cell.LSTMCell(self.n_first_hidden, state_is_tuple=True)
+                    cell_1 = tf.nn.rnn_cell.DropoutWrapper(cell=cell_1, output_keep_prob=self.keep_prob)
+                    cell_1 = tf.nn.rnn_cell.MultiRNNCell(cells=[cell_1] * 2, state_is_tuple=True)
                     outputs_1, state_1 = tf.nn.dynamic_rnn(cell_1, self.data[0], dtype=tf.float32)
                     output_first_level.append(self._get_last_out(outputs_1))
 
