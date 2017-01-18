@@ -55,21 +55,21 @@ class Reader:
         train_index = []; validation_index = []; test_index = []
         #read first modality data
         if self.modality[0] == 1:
-            shift_day_1 = (max_shift - config.n_shift_1) / data_step; assert (max_shift - config.n_shift_1)%data_step == 0
+            shift_day_1 = (max_shift - config.n_shift_1) // data_step; assert (max_shift - config.n_shift_1)%data_step == 0
             ir_feature_reader = Feature_Reader(ir_train_data_path, ir_validation_data_path, ir_test_data_path, n_step_1, data_step, shift_day_1)
             ir_train_index, ir_validation_index, ir_test_index = ir_feature_reader.get_index()
             train_index.append(ir_train_index); validation_index.append(ir_validation_index); test_index.append(ir_test_index)
 
         #read second modality data
         if self.modality[1] == 1:
-            shift_day_2 = (max_shift - config.n_shift_2) / data_step; assert (max_shift - config.n_shift_2)%data_step == 0
+            shift_day_2 = (max_shift - config.n_shift_2) // data_step; assert (max_shift - config.n_shift_2)%data_step == 0
             mete_feature_reader = Feature_Reader(mete_train_data_path, mete_validation_data_path, mete_test_data_path, n_step_2, data_step, shift_day_2)
             mete_train_index, mete_validation_index, mete_test_index = mete_feature_reader.get_index()
             train_index.append(mete_train_index); validation_index.append(mete_validation_index); test_index.append(mete_test_index)
 
         #read third modality data
         if self.modality[2] == 1:
-            shift_day_3 = (max_shift - config.n_shift_3) / data_step; assert (max_shift - config.n_shift_3)%data_step == 0
+            shift_day_3 = (max_shift - config.n_shift_3) // data_step; assert (max_shift - config.n_shift_3)%data_step == 0
             sky_cam_feature_reader = Feature_Reader(sky_cam_train_data_path, sky_cam_validation_data_path, sky_cam_test_data_path, n_step_3, data_step, shift_day_3)
             sky_cam_train_index, sky_cam_validation_index, sky_cam_test_index = sky_cam_feature_reader.get_index()
             train_index.append(sky_cam_train_index); validation_index.append(sky_cam_validation_index); test_index.append(sky_cam_test_index)
@@ -154,7 +154,7 @@ class Reader:
             mete_batch_data = (self.mete_train_data[index] - self.mete_mean) / self.mete_std
             batch.append(mete_batch_data)
         if self.modality[2] == 1:
-            sky_cam_batch_data = self.path2image(self.sky_cam_train_data, index)
+            sky_cam_batch_data = self.path2image(self.sky_cam_train_data[index])
             batch.append(sky_cam_batch_data)
         target_batch_data = self.target_train_data[index]
         batch.append(target_batch_data)
