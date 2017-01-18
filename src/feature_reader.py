@@ -69,14 +69,3 @@ class Feature_Reader:
 
     def get_index(self):
         return self.train_index, self.validation_index, self.test_index
-
-
-
-
-
-
-
-
-
-
-#
