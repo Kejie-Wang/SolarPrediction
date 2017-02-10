@@ -10,6 +10,7 @@ from reader import Reader
 from model import Model
 from util import MSE_And_MAE
 import time
+import sys
 
 def fill_feed_dict(x_ir_placeholder, x_mete_placeholder, x_sky_cam_placeholder, y_, keep_prob_placeholder, feed_data, keep_prob, modality):
     feed_dict = {}
@@ -34,9 +35,73 @@ def do_eval(sess,
 
     return sess.run(evaluation, feed_dict=feed_dict)
 
+
+def make_folder_path(config, path):
+    """
+    @brief make the saved model or the result output folder
+            in fmt: regressor/modality/n_step+n_shift/
+    """
+    if not os.path.exists(path):
+        os.mkdir(path)
+    path += config.regressor + "/"
+    if not os.path.exists(path):
+        os.mkdir(path)
+
+    hour_size_shift_size = ""
+    if config.modality[0] == 1:
+        path += "ir"
+        hour_size_shift_size += str(config.n_step_1) + "hours" + str(config.n_shift_1) + "shift_"
+    if config.modality[1] == 1:
+        path += "mete"
+        hour_size_shift_size += str(config.n_step_2) + "hours" + str(config.n_shift_2) + "shift_"
+    if config.modality[2] == 1:
+        path += "skycam"
+        hour_size_shift_size += str(config.n_step_3) + "hours" + str(config.n_shift_3) + "shift_"
+    path += "/"
+    if not os.path.exists(path):
+        os.mkdir(path)
+    path += hour_size_shift_size + "/"
+    if not os.path.exists(path):
+        os.mkdir(path)
+
+    path += get_file_name(config) + "/"
+    if not os.path.exists(path):
+        os.mkdir(path)
+
+    return path
+
+def get_file_name(config):
+    """
+    @brief get the saved model or result output file name
+            in fmt: h_ahead + n_target + hidden_size + quantile_rate(quantile regressor only)
+    """
+    file_name = ""
+    file_name += str(config.h_ahead) + "_ahead" + str(config.n_target) + "_target_"
+    if config.modality[0] == 1:
+        file_name += str(config.n_first_hidden) + "_"
+    if config.modality[1] == 1:
+        file_name += str(config.n_second_hidden) + "_"
+    if config.modality[2] == 1:
+        file_name += str(config.n_third_hidden) + "_"
+    if config.regressor == "quantile":
+        file_name += str(config.quantile_rate)
+
+    if file_name[-1] == "_":
+        file_name = file_name[0:-1]
+
+    return file_name
+
 def main(_):
+
     #get the config
     config = Model_Config()
+
+    for i in range(1, len(sys.argv)):
+        arg = sys.argv[i].split('=')
+        if hasattr(config, arg[0]):
+            setattr(config, arg[0], int(arg[1]))
+        else:
+            exit(0)
 
     n_step_1 = config.n_step_1
     n_step_2 = config.n_step_2
@@ -69,8 +134,19 @@ def main(_):
     #new a saver to save the model
     saver = tf.train.Saver()
 
+    saved_model_folder_path = make_folder_path(config, "../saved_model/")
+    saved_output_folder_path = make_folder_path(config,  "../output/")
+    file_name = get_file_name(config)
+
+    print '\033[1;31;40m'
+    print "save the model in", saved_model_folder_path
+    print "save the test result in", saved_output_folder_path
+    print "save the file with", file_name
+    print '\033[0m'
+
     validation_last_loss = float('inf')
     best_test_result = None
+    lr = config.lr
 
     tensor_config = tf.ConfigProto()
     tensor_config.gpu_options.allow_growth = True
@@ -78,52 +154,73 @@ def main(_):
         # initialize all variables
         tf.global_variables_initializer().run()
 
+        #restore the model if there is a backup of the model
+        path = tf.train.latest_checkpoint(saved_model_folder_path)
+        if not (path is None):
+            save_path = saver.restore(sess, path)
+            print '\033[1;34;40m', "restore model", '\033[0m'
+
+        # get the train, validation and test set
         train_set = reader.get_train_set()
         validation_set = reader.get_validation_set()
         test_set = reader.get_test_set()
-
+        # fill the train, validation and test feed dict
         train_feed = fill_feed_dict(x_ir, x_mete, x_sky_cam, y_, keep_prob, train_set, 1.0, modality)
         validation_feed = fill_feed_dict(x_ir, x_mete, x_sky_cam, y_, keep_prob, validation_set, 1.0, modality)
         test_feed = fill_feed_dict(x_ir, x_mete, x_sky_cam, y_, keep_prob, test_set, 1.0, modality)
 
-        np.set_printoptions(precision=4)
-        test_target = test_set[-1]
-        for i in sorted(test_target):
-            print i,
-        print "\n"
-
         for i in range(epoch_size):
-            # test
+            # do test
             if i%config.test_step == 0:
-                #calculate the mse and mae
-                rmse, mae = do_eval(sess, [model.rmse, model.mae], test_feed)
-                print "Test  RMSE: ", rmse, "Test  MAE: ", mae
-                rmse, mae = do_eval(sess, [model.rmse, model.mae], validation_feed)
-                print "Valid RMSE: ", rmse, "Valid MAE: ", mae
-                rmse, mae = do_eval(sess, [model.rmse, model.mae], train_feed)
-                print "Train RMSE: ", rmse, "Train MAE: ", mae
-                print "sum of w: ", sess.run(model.w_sum)
-                print "bias of regression: ", sess.run(model.bias)
+                #calculate the rmse and mae
+                print '\033[1;31;40m'
+                if config.regressor == "lin" or config.regressor == "msvr":
+                    rmse, mae = do_eval(sess, [model.rmse, model.mae], test_feed)
+                    print "Test  RMSE: ", rmse, "Test  MAE: ", mae
+                    rmse, mae = do_eval(sess, [model.rmse, model.mae], validation_feed)
+                    print "Valid RMSE: ", rmse, "Valid MAE: ", mae
+                    rmse, mae = do_eval(sess, [model.rmse, model.mae], train_feed)
+                    print "Train RMSE: ", rmse, "Train MAE: ", mae
+                    print "sum of w: ", sess.run(model.w_sum)
+                    print "bias of regression: ", sess.run(model.bias)
+                elif config.regressor == "quantile":
+                    coverage_rate = do_eval(sess, model.coverage_rate, test_feed)
+                    print "Test  covarage rate:", coverage_rate
+                    coverage_rate = do_eval(sess, model.coverage_rate, validation_feed)
+                    print "Valid covarage rate:", coverage_rate
+                    coverage_rate = do_eval(sess, model.coverage_rate, train_feed)
+                    print "Train covarage rate:", coverage_rate
+                    print "sum of w: ", sess.run(model.w_sum)
+                    print "bias of regression: ", sess.run(model.bias)
+                print '\033[0m'
 
-            #train
+            # train
             batch = reader.next_batch()
-            feed_dict = fill_feed_dict(x_ir, x_mete, x_sky_cam, y_, keep_prob, batch, 0.8, modality)
+            feed_dict = fill_feed_dict(x_ir, x_mete, x_sky_cam, y_, keep_prob, batch, 0.6, modality)
             sess.run(model.optimize, feed_dict=feed_dict)
 
-            if i%25 == 0:
-                sess.run(model.optimize, feed_dict=validation_feed)
-            #print step
+            # print step
             if i%config.print_step == 0:
-                print "Step", i, "train loss:",do_eval(sess, model.loss, feed_dict)
-                # print "validation loss: ", validation_last_loss
+                feed_dict = fill_feed_dict(x_ir, x_mete, x_sky_cam, y_, keep_prob, batch, 1.0, modality)
+                print '\033[1;32;40m', "Step", i, "train loss:",do_eval(sess, model.loss, feed_dict), '\033[0m'
 
-            #validation
-            # validation_loss = do_eval(sess, model.loss, validation_feed)
-            #
-            # #compare the validation with the last loss
-            # if validation_loss < validation_last_loss:
-            #     validation_last_loss = validation_loss
-            #     best_test_result = do_eval(sess, model.prediction, test_feed)
+            # validation
+            validation_loss = do_eval(sess, model.loss, validation_feed)
+
+            # if i%20 == 0 and validation_loss < validation_last_loss:
+            #     save_path = saver.save(sess, saved_model_folder_path + "model.ckpt")
+            #     print '\033[1;34;40m', "save the model", '\033[0m'
+
+            #compare the validation with the last loss
+            if validation_loss < validation_last_loss:
+                validation_last_loss = validation_loss
+                best_test_result = do_eval(sess, model.prediction, test_feed)
+                np.savetxt(saved_output_folder_path + file_name + ".res", best_test_result, fmt="%.4f", delimiter=',')
+                np.savetxt(saved_output_folder_path + file_name + ".target", test_set[-1], fmt="%.4f", delimiter=',')
+
+                save_path = saver.save(sess, saved_model_folder_path + "model.ckpt")
+                print '\033[1;34;40m', "save the model", '\033[0m'
+
 
 if __name__ == "__main__":
     tf.app.run()
