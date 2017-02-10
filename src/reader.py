@@ -110,14 +110,14 @@ class Reader:
 
         # self.index = np.random.random_integers(0, self.train_num-1, size=(self.batch_size))
         #print the dataset info
+        print '\033[1;31;40m'
         print "Dataset info"
         print "="*80
         print "train number:", self.train_num
         print "validation number:", self.validation_num
         print "test number", self.test_num
         print "batch size:", self.batch_size
-        #print "use", config.n_step, "hours to predict the next ", config.n_target, " consecutive hours"
-        print "\n"
+        print '\033[0m'
 
     def path2image(self, data):
         mean = cv2.resize(np.load('mean.npy'), (self.height, self.width)).astype('float32')
