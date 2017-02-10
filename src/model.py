@@ -69,7 +69,7 @@ class Model:
 
         #quantile regression params
         if self.regressor == "quantile":
-            self.quantile_rate = quantile_rate
+            self.quantile_rate = config.quantile_rate
 
         self._prediction = None
         self._optimize = None
@@ -217,6 +217,7 @@ class Model:
                 self._prediction = tf.matmul(output, weight) + bias
 
                 self.w_sum = tf.reduce_sum(tf.square(weight))
+                self.b_sum = tf.reduce_sum(tf.square(bias))
                 self.weight = weight
                 self.bias = bias
 
@@ -229,7 +230,7 @@ class Model:
         """
         if self._loss is None:
             if self.regressor == "lin": #only work on the target is one-dim
-                self._loss = tf.reduce_mean(tf.square(self.prediction - self.target)) + self.w_sum * 3
+                self._loss = tf.reduce_mean(tf.square(self.prediction - self.target)) + (self.w_sum + self.b_sum) * 3
             elif self.regressor == "msvr":
                 #the loss of the train set
                 diff = self.prediction - self.target
@@ -241,7 +242,7 @@ class Model:
             elif self.regressor == "quantile":
                 diff = self.prediction - self.target
                 coeff = tf.cast(diff>0, tf.float32) - self.quantile_rate
-                self._loss = tf.reduce_sum(tf.mul(diff, coeff))
+                self._loss = tf.reduce_sum(tf.mul(diff, coeff)) + (self.w_sum + self.b_sum) * 10
 
         return self._loss
 
@@ -263,3 +264,7 @@ class Model:
     @property
     def rmse(self):
         return tf.sqrt(tf.reduce_mean(tf.square(self.prediction - self.target)))
+
+    @property
+    def coverage_rate(self):
+        return tf.reduce_mean(tf.cast(self.prediction - self.target > 0, tf.float32))
