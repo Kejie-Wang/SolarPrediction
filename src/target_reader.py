@@ -57,3 +57,7 @@ class Target_Reader:
 
     def get_index(self):
         return self.train_index, self.validation_index, self.test_index
+
+    def get_test_missing_index(self, test_index):
+        num = len(self.test_data)
+        return np.setdiff1d(np.arange(num), test_index)

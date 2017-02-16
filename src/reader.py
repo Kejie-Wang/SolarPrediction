@@ -74,12 +74,12 @@ class Reader:
             sky_cam_train_index, sky_cam_validation_index, sky_cam_test_index = sky_cam_feature_reader.get_index()
             train_index.append(sky_cam_train_index); validation_index.append(sky_cam_validation_index); test_index.append(sky_cam_test_index)
 
-        #read target data
+        # read target data
         target_reader = Target_Reader(target_train_data_path, target_validation_data_path, target_test_data_path, max_shift, h_ahead, data_step, n_target)
         target_train_index, target_validation_index, target_test_index = target_reader.get_index()
         train_index.append(target_train_index); validation_index.append(target_validation_index); test_index.append(target_test_index)
 
-        #get the valid index
+        # get the valid index
         train_index = reduce(np.intersect1d, train_index)
         validation_index = reduce(np.intersect1d, validation_index)
         test_index= reduce(np.intersect1d, test_index)
@@ -94,6 +94,8 @@ class Reader:
             self.sky_cam_train_data, self.sky_cam_validation_data, self.sky_cam_test_data = sky_cam_feature_reader.get_data(train_index, validation_index, test_index)
 
         self.target_train_data, self.target_validation_data, self.target_test_data = target_reader.get_data(train_index, validation_index, test_index)
+
+        self.test_missing_index = target_reader.get_test_missing_index(test_index)
 
         #CAUTIOUS: the length of the ir_train_data and target_train_data may be differnet
         #the length of mete_test_data may be more short
