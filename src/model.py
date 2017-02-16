@@ -12,9 +12,9 @@ class Model:
         ----|  lstm   |--------- |
              ---------           |
                                  |
-             ---------           |           ----------           ------------
-        ----|  lstm   |--------- |----------|   lstm   | --------| regression |
-             ---------           |           ----------           ------------
+             ---------           |           ----------------           ------------
+        ----|  lstm   |--------- |----------| lstm(optional) | --------| regression |
+             ---------           |           ----------------           ------------
                                  |
              -----    ------     |
         ----| CNN |--| lstm |----|
@@ -205,10 +205,21 @@ class Model:
             # concat two features into a feature
             output = tf.concat(1, output_first_level)
 
-            #2nd level lstm
+            # 2nd level lstm
+            # optional
             # with tf.variable_scope("second_level"):
+            #     output_first_level = []
+            #     if self.modality[0] == 1:
+            #         output_first_level.append(outputs_1)
+            #     if self.modality[1] == 1:
+            #         output_first_level.append(outputs_2)
+            #     if self.modality[2] == 1:
+            #         output_first_level.append(outputs_3)
+            #     output_first_level = tf.concat(2, output_first_level)
             #     cell_level2 = tf.nn.rnn_cell.LSTMCell(self.n_hidden_level2, state_is_tuple=True)
-            #     outputs, state_level2 = tf.nn.dynamic_rnn(cell_level2, data_level2, dtype=tf.float32)
+            #     outputs, state_level2 = tf.nn.dynamic_rnn(cell_level2, output_first_level, dtype=tf.float32)
+            #     output = self._get_last_out(outputs)
+            #     output_first_level_size = self.n_hidden_level2
 
             # regression
             with tf.variable_scope("regression"):
@@ -230,7 +241,7 @@ class Model:
         """
         if self._loss is None:
             if self.regressor == "lin": #only work on the target is one-dim
-                self._loss = tf.reduce_mean(tf.square(self.prediction - self.target)) + (self.w_sum + self.b_sum) * 3
+                self._loss = tf.reduce_mean(tf.square(self.prediction - self.target)) + (self.w_sum + self.b_sum) * self.C
             elif self.regressor == "msvr":
                 #the loss of the train set
                 diff = self.prediction - self.target
@@ -242,7 +253,7 @@ class Model:
             elif self.regressor == "quantile":
                 diff = self.prediction - self.target
                 coeff = tf.cast(diff>0, tf.float32) - self.quantile_rate
-                self._loss = tf.reduce_sum(tf.mul(diff, coeff)) + (self.w_sum + self.b_sum) * 10
+                self._loss = tf.reduce_sum(tf.mul(diff, coeff)) + (self.w_sum + self.b_sum) * self.C
 
         return self._loss
 
