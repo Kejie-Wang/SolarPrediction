@@ -96,12 +96,18 @@ def main(_):
     #get the config
     config = Model_Config()
 
+    restore = 1
     for i in range(1, len(sys.argv)):
         arg = sys.argv[i].split('=')
         if hasattr(config, arg[0]):
-            setattr(config, arg[0], int(arg[1]))
-        else:
-            exit(0)
+            if arg[0] == "regressor":
+                setattr(config, arg[0], arg[1])
+            elif arg[0] == "lr" or arg[0]=="quantile_rate":
+                setattr(config, arg[0], float(arg[1]))
+            else:
+                setattr(config, arg[0], int(arg[1]))
+        elif arg[0] == "restore":
+            restore = int(arg[1])
 
     n_step_1 = config.n_step_1
     n_step_2 = config.n_step_2
@@ -134,8 +140,8 @@ def main(_):
     #new a saver to save the model
     saver = tf.train.Saver()
 
-    saved_model_folder_path = make_folder_path(config, "../saved_model/")
-    saved_output_folder_path = make_folder_path(config,  "../output/")
+    saved_model_folder_path = make_folder_path(config, "../saved_model_2006_2012/")
+    saved_output_folder_path = make_folder_path(config,  "../output_2006_2012/")
     file_name = get_file_name(config)
 
     print '\033[1;31;40m'
@@ -144,7 +150,7 @@ def main(_):
     print "save the file with", file_name
     print '\033[0m'
 
-    validation_last_loss = float('inf')
+    validation_last_rmse = float('inf')
     best_test_result = None
     lr = config.lr
 
@@ -156,7 +162,7 @@ def main(_):
 
         #restore the model if there is a backup of the model
         path = tf.train.latest_checkpoint(saved_model_folder_path)
-        if not (path is None):
+        if restore == 1 and (not (path is None)):
             save_path = saver.restore(sess, path)
             print '\033[1;34;40m', "restore model", '\033[0m'
 
@@ -164,10 +170,17 @@ def main(_):
         train_set = reader.get_train_set()
         validation_set = reader.get_validation_set()
         test_set = reader.get_test_set()
+
         # fill the train, validation and test feed dict
         train_feed = fill_feed_dict(x_ir, x_mete, x_sky_cam, y_, keep_prob, train_set, 1.0, modality)
         validation_feed = fill_feed_dict(x_ir, x_mete, x_sky_cam, y_, keep_prob, validation_set, 1.0, modality)
         test_feed = fill_feed_dict(x_ir, x_mete, x_sky_cam, y_, keep_prob, test_set, 1.0, modality)
+
+        # save the target data and missing index
+        np.savetxt(saved_output_folder_path + file_name + ".target", test_set[-1], fmt="%.4f", delimiter=',')
+        test_missing_index = reader.test_missing_index
+        print '\033[1;31;40m', "test target missing index:", test_missing_index, '\033[0m'
+        np.savetxt(saved_output_folder_path + file_name + "_missing_index.csv", test_missing_index, fmt="%d", delimiter=',')
 
         for i in range(epoch_size):
             # do test
@@ -205,21 +218,17 @@ def main(_):
                 print '\033[1;32;40m', "Step", i, "train loss:",do_eval(sess, model.loss, feed_dict), '\033[0m'
 
             # validation
-            validation_loss = do_eval(sess, model.loss, validation_feed)
-
-            # if i%20 == 0 and validation_loss < validation_last_loss:
-            #     save_path = saver.save(sess, saved_model_folder_path + "model.ckpt")
-            #     print '\033[1;34;40m', "save the model", '\033[0m'
+            validation_rmse = do_eval(sess, model.rmse, validation_feed)
 
             #compare the validation with the last loss
-            if validation_loss < validation_last_loss:
-                validation_last_loss = validation_loss
+            if validation_rmse < validation_last_rmse:
+                validation_last_rmse = validation_rmse
                 best_test_result = do_eval(sess, model.prediction, test_feed)
                 np.savetxt(saved_output_folder_path + file_name + ".res", best_test_result, fmt="%.4f", delimiter=',')
-                np.savetxt(saved_output_folder_path + file_name + ".target", test_set[-1], fmt="%.4f", delimiter=',')
 
-                save_path = saver.save(sess, saved_model_folder_path + "model.ckpt")
-                print '\033[1;34;40m', "save the model", '\033[0m'
+                if i>1500:
+                    save_path = saver.save(sess, saved_model_folder_path + "model.ckpt")
+                    print '\033[1;34;40m', "save the model", '\033[0m'
 
 
 if __name__ == "__main__":
