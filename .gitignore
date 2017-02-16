@@ -33,7 +33,7 @@ model.ckpt.index
 model.ckpt.meta
 
 output/
+output_2006_2012/
 saved_model/
-dataset/NREL_SSRL_BMS_IRANDMETE/input_data/200011201611/
-dataset/NREL_SSRL_BMS_IRANDMETE/input_data/200011201609/
-dataset/NREL_SSRL_BMS_IRANDMETE/input_data/200601201609/
+saved_model_2006_2012/
+dataset/NREL_SSRL_BMS_IRANDMETE/input_data/200601201205/
