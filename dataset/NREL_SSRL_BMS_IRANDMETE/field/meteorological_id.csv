@@ -5,10 +5,13 @@ Dry Bulb Temperature (Tower)
 Dry Bulb Temperature (Deck)
 Dry Bulb Temperature (SE)
 Dry Bulb Temperature (Data lab)
+Dry Bulb Temperature (PV)
+Relative Humidity (PV)
 Wet Bulb Temperature (Tower)
 Dew Point Temperature (Tower)
 Wind Chill Temperature (Tower)
 Wind Chill Temperature (Deck)
+Wind Chill Temerature (Deck)
 Wind Chill Temperature
 Relative Humidity (Tower)
 Relative Humidity (Deck)
@@ -91,3 +94,6 @@ Research RTwr 3
 Research PVTwr 0
 Research PVTwr 1
 Research PVTwr 2
+AOD 500nm
+Albedo (CNR1)
+Albedo (PSP)

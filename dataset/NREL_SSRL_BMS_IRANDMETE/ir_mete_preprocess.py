@@ -21,10 +21,10 @@ MONTH_IN_A_YEAR = 12
 MISSING_VALUE = -99999
 
 #dataset range configuration
-year_start = 2000
-month_start = 11
-year_end = 2016
-month_end = 9
+year_start = 2006
+month_start = 1
+year_end = 2012
+month_end = 5
 
 #data path
 raw_data_path = "./raw_data/"

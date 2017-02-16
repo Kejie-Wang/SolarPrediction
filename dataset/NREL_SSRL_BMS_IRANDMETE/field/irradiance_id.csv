@@ -115,3 +115,23 @@ Signal SPP (global)
 Signal PSP (global)
 Signal GPP (global)
 Signal DR02 (direct)
+Diffuse CM-22 (ventilated)
+Diffuse PSP (vent/thermal corr.)
+Diffuse CM-22 (ventilated)
+Diffuse PSP (vent/thermal corr.)
+Diffuse PSP (ventilated)
+Direct CH1
+Direct NIP (secondary)
+Downwelling Infrared CG3 (CNR1)
+Global 40-South PSP
+Global Apogee
+Global CM-22 (ventilated)
+Global Normal CM-21
+Global PSP
+Global PSP (thermal/zenith corr.)
+Global PSP (ventilated)
+Global SP-Lite
+Global TSP-1
+Net Radiation (CNR1)
+Upwelling Infrared CG3 (CNR1)
+Upwelling Shortwave PSP
