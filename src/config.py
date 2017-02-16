@@ -3,7 +3,7 @@ class Model_Config:
     # regressor type
     # lin: linear regression using MSE as loss function
     # msvr: multiple support vector regression
-    # prob: probabilistic regression (use the quantile regression algorithms)
+    # quantile: probabilistic regression (use the quantile regression algorithms)
     regressor = "lin"
 
     # msvr params
@@ -49,10 +49,10 @@ class Model_Config:
     #train and test params
     epoch_size = 10000
 
-    print_step = 200
-    test_step = 500
+    print_step = 100
+    test_step = 200
 
-    n_input_ir = 31
-    n_input_mete = 20
+    n_input_ir = 61
+    n_input_mete = 30
     width = 64
     height = 64
