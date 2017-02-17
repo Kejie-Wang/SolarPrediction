@@ -12,7 +12,13 @@ from util import MSE_And_MAE
 import time
 import sys
 
-def fill_feed_dict(x_ir_placeholder, x_mete_placeholder, x_sky_cam_placeholder, y_, keep_prob_placeholder, feed_data, keep_prob, modality):
+def fill_feed_dict(x_ir_placeholder, \
+                x_mete_placeholder, \
+                x_sky_cam_placeholder, \
+                hour_index_placeholder, \
+                y_placeholder, \
+                keep_prob_placeholder, \
+                feed_data, keep_prob, modality):
     feed_dict = {}
     index = 0
     if modality[0] == 1:
@@ -24,7 +30,8 @@ def fill_feed_dict(x_ir_placeholder, x_mete_placeholder, x_sky_cam_placeholder, 
     if modality[2] == 1:
         feed_dict[x_sky_cam_placeholder] = feed_data[index]
         index += 1
-    feed_dict[y_] = feed_data[index]
+    feed_dict[hour_index_placeholder] = feed_data[index]
+    feed_dict[y_placeholder] = feed_data[-1]
     feed_dict[keep_prob_placeholder] = keep_prob
 
     return feed_dict
@@ -129,19 +136,19 @@ def main(_):
     x_ir = tf.placeholder(tf.float32, [None, n_step_1, n_input_ir])
     x_mete = tf.placeholder(tf.float32, [None, n_step_2, n_input_mete])
     x_sky_cam = tf.placeholder(tf.float32, [None, n_step_3, height_image, width_image])
-
+    hour_index = tf.placeholder(tf.float32)
     keep_prob = tf.placeholder(tf.float32)
     y_ = tf.placeholder(tf.float32, [None, n_target])
 
     reader = Reader(config)
 
-    model = Model([x_ir, x_mete, x_sky_cam], y_, keep_prob, config)
+    model = Model([x_ir, x_mete, x_sky_cam], y_, hour_index, keep_prob, config)
 
     #new a saver to save the model
     saver = tf.train.Saver()
 
-    saved_model_folder_path = make_folder_path(config, "../saved_model_2006_2012/")
-    saved_output_folder_path = make_folder_path(config,  "../output_2006_2012/")
+    saved_model_folder_path = make_folder_path(config, "../saved_model2/")
+    saved_output_folder_path = make_folder_path(config,  "../output2/")
     file_name = get_file_name(config)
 
     print '\033[1;31;40m'
@@ -167,19 +174,19 @@ def main(_):
             print '\033[1;34;40m', "restore model", '\033[0m'
 
         # get the train, validation and test set
-        train_set = reader.get_train_set()
+        # train_set = reader.get_train_set()
         validation_set = reader.get_validation_set()
         test_set = reader.get_test_set()
 
         # fill the train, validation and test feed dict
-        train_feed = fill_feed_dict(x_ir, x_mete, x_sky_cam, y_, keep_prob, train_set, 1.0, modality)
-        validation_feed = fill_feed_dict(x_ir, x_mete, x_sky_cam, y_, keep_prob, validation_set, 1.0, modality)
-        test_feed = fill_feed_dict(x_ir, x_mete, x_sky_cam, y_, keep_prob, test_set, 1.0, modality)
+        # train_feed = fill_feed_dict(x_ir, x_mete, x_sky_cam, hour_index, y_, keep_prob, train_set, 1.0, modality)
+        validation_feed = fill_feed_dict(x_ir, x_mete, x_sky_cam, hour_index, y_, keep_prob, validation_set, 1.0, modality)
+        test_feed = fill_feed_dict(x_ir, x_mete, x_sky_cam, hour_index, y_, keep_prob, test_set, 1.0, modality)
 
-        # save the target data and missing index
+        # save the target data, hour_index and missing index
         np.savetxt(saved_output_folder_path + file_name + ".target", test_set[-1], fmt="%.4f", delimiter=',')
+        np.savetxt(saved_output_folder_path + file_name + "_hour_index.csv", test_set[-2], fmt="%d", delimiter=',')
         test_missing_index = reader.test_missing_index
-        print '\033[1;31;40m', "test target missing index:", test_missing_index, '\033[0m'
         np.savetxt(saved_output_folder_path + file_name + "_missing_index.csv", test_missing_index, fmt="%d", delimiter=',')
 
         for i in range(epoch_size):
@@ -192,8 +199,8 @@ def main(_):
                     print "Test  RMSE: ", rmse, "Test  MAE: ", mae
                     rmse, mae = do_eval(sess, [model.rmse, model.mae], validation_feed)
                     print "Valid RMSE: ", rmse, "Valid MAE: ", mae
-                    rmse, mae = do_eval(sess, [model.rmse, model.mae], train_feed)
-                    print "Train RMSE: ", rmse, "Train MAE: ", mae
+                    # rmse, mae = do_eval(sess, [model.rmse, model.mae], train_feed)
+                    # print "Train RMSE: ", rmse, "Train MAE: ", mae
                     print "sum of w: ", sess.run(model.w_sum)
                     print "bias of regression: ", sess.run(model.bias)
                 elif config.regressor == "quantile":
@@ -201,20 +208,20 @@ def main(_):
                     print "Test  covarage rate:", coverage_rate
                     coverage_rate = do_eval(sess, model.coverage_rate, validation_feed)
                     print "Valid covarage rate:", coverage_rate
-                    coverage_rate = do_eval(sess, model.coverage_rate, train_feed)
-                    print "Train covarage rate:", coverage_rate
+                    # coverage_rate = do_eval(sess, model.coverage_rate, train_feed)
+                    # print "Train covarage rate:", coverage_rate
                     print "sum of w: ", sess.run(model.w_sum)
                     print "bias of regression: ", sess.run(model.bias)
                 print '\033[0m'
 
             # train
             batch = reader.next_batch()
-            feed_dict = fill_feed_dict(x_ir, x_mete, x_sky_cam, y_, keep_prob, batch, 0.6, modality)
+            feed_dict = fill_feed_dict(x_ir, x_mete, x_sky_cam, hour_index, y_, keep_prob, batch, 0.6, modality)
             sess.run(model.optimize, feed_dict=feed_dict)
 
             # print step
             if i%config.print_step == 0:
-                feed_dict = fill_feed_dict(x_ir, x_mete, x_sky_cam, y_, keep_prob, batch, 1.0, modality)
+                feed_dict = fill_feed_dict(x_ir, x_mete, x_sky_cam, hour_index, y_, keep_prob, batch, 1.0, modality)
                 print '\033[1;32;40m', "Step", i, "train loss:",do_eval(sess, model.loss, feed_dict), '\033[0m'
 
             # validation
