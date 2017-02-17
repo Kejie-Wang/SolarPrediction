@@ -8,17 +8,19 @@ class Model:
     """
     This is an multi-modal (three modality) neutral network model used as point/probabilistic forecast
         model digram:
-             ---------
-        ----|  lstm   |--------- |
-             ---------           |
-                                 |
-             ---------           |           ----------------           ------------
-        ----|  lstm   |--------- |----------| lstm(optional) | --------| regression |
-             ---------           |           ----------------           ------------
-                                 |
-             -----    ------     |
-        ----| CNN |--| lstm |----|
-             -----    ------
+                            ---------
+        irradiance     ----|  lstm   |--------- |
+                            ---------           |
+                                                |
+                            ---------           |           ----------------            -----------
+        meteorological ----|  lstm   |--------- |----------| lstm(optional) | --------| regression |
+                            ---------           |           ----------------      |     -----------
+                                                |                                 |
+                            -----    ------     |                                 |
+        sky image      ----| CNN |--| lstm |----|                                 |
+                            -----    ------                                       |
+        hour index     -----------------------------------------------------------
+
         The model focuses on the multi-modality and this model contain three modalities each of which is lstm, lstm and CNN.
         e.g. This model used to predict solar irradiance and the first and second modalities are the irradiance and meteorological data
             and the third modality is an image dataset and use an CNN to extract the feature. And then concatenating all features into a
@@ -29,7 +31,7 @@ class Model:
                 multi-support vector regression (considering the time dependency)
                 quantile regression (used as probabilistic regression)
     """
-    def __init__(self, data, target, keep_prob, config):
+    def __init__(self, data, target, hour_index, keep_prob, config):
         """
         @brief The constructor of the model
         @param data: the input the data of the model (features) data[0], data[1], ... for multi-modality
@@ -44,6 +46,7 @@ class Model:
         #the input data
         self.data = data
         self.target = target
+        self.hour_index = hour_index
         self.keep_prob = keep_prob
 
         #the network parameters
@@ -62,10 +65,11 @@ class Model:
         #train params
         self.lr = config.lr
 
+        self.C = config.C
+
         #loss params (svr params)
         if self.regressor == "msvr":
             self.epsilon = config.epsilon
-            self.C = config.C
 
         #quantile regression params
         if self.regressor == "quantile":
@@ -202,7 +206,10 @@ class Model:
                     outputs_3, state3 = tf.nn.dynamic_rnn(cell_3, cnn_out, dtype=tf.float32)
                     output_first_level.append(self._get_last_out(outputs_3))
 
-            # concat two features into a feature
+            # add the hour_index into the feature
+            output_first_level.append(self.hour_index)
+            output_first_level_size += 1
+            # concat the features into a feature
             output = tf.concat(1, output_first_level)
 
             # 2nd level lstm
