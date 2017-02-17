@@ -27,6 +27,14 @@ sky_cam_raw_data_path = '../dataset/NREL_SSRL_BMS_SKY_CAM/raw_data/'
 
 class Reader:
 
+    def _get_hour_index_and_filter_data(self, h_ahead, data_step, data_index):
+        # get hour index
+        hour_index = h_ahead + data_index % HOUR_IN_A_DAY
+        # filter the data
+        index = np.logical_and(hour_index>=5, hour_index<=18)
+
+        return data_index[index], np.reshape(hour_index[index], [-1, 1])
+
     def __init__(self, config):
         """
         The constructor of the class Reader
@@ -83,6 +91,13 @@ class Reader:
         train_index = reduce(np.intersect1d, train_index)
         validation_index = reduce(np.intersect1d, validation_index)
         test_index= reduce(np.intersect1d, test_index)
+
+        # get the hour index
+        # filter the hour index less than 5 or bigger than 18
+        # the irradiance in this range is nearly zero and it need not forecast
+        train_index, self.train_hour_index = self._get_hour_index_and_filter_data(h_ahead, data_step, train_index)
+        validation_index, self.validation_hour_index = self._get_hour_index_and_filter_data(h_ahead, data_step, validation_index)
+        test_index, self.test_hour_index = self._get_hour_index_and_filter_data(h_ahead, data_step, test_index)
 
         if self.modality[0] == 1:
             self.ir_train_data, self.ir_validation_data, self.ir_test_data = ir_feature_reader.get_data(train_index, validation_index, test_index)
@@ -158,6 +173,8 @@ class Reader:
         if self.modality[2] == 1:
             sky_cam_batch_data = self.path2image(self.sky_cam_train_data[index])
             batch.append(sky_cam_batch_data)
+        hour_index_batch_data = self.train_hour_index[index]
+        batch.append(hour_index_batch_data)
         target_batch_data = self.target_train_data[index]
         batch.append(target_batch_data)
 
@@ -174,6 +191,7 @@ class Reader:
             train_set.append((self.mete_train_data - self.mete_mean) / self.mete_std)
         if self.modality[2] == 1:
             train_set.append(self.path2image(self.sky_cam_train_data))
+        train_set.append(self.train_hour_index)
         train_set.append(self.target_train_data)
 
         return train_set
@@ -192,6 +210,7 @@ class Reader:
             validation_set.append((self.mete_validation_data - self.mete_mean) / self.mete_std)
         if self.modality[2] == 1:
             validation_set.append(self.path2image(self.sky_cam_validation_data))
+        validation_set.append(self.validation_hour_index)
         validation_set.append(self.target_validation_data)
 
         return validation_set
@@ -207,6 +226,7 @@ class Reader:
             test_set.append((self.mete_test_data - self.mete_mean) / self.mete_std)
         if self.modality[2] == 1:
             test_set.append(self.path2image(self.sky_cam_test_data))
+        test_set.append(self.test_hour_index)
         test_set.append(self.target_test_data)
 
         return test_set
