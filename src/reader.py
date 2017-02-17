@@ -29,7 +29,8 @@ class Reader:
 
     def _get_hour_index_and_filter_data(self, h_ahead, data_step, data_index):
         # get hour index
-        hour_index = h_ahead + data_index % HOUR_IN_A_DAY
+        hour_index = np.arange(h_ahead, max(data_index)*data_step+h_ahead+1, data_step)
+        hour_index = hour_index[data_index] % HOUR_IN_A_DAY
         # filter the data
         index = np.logical_and(hour_index>=5, hour_index<=18)
 
