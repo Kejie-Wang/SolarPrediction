@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-
 from __future__ import division
 import numpy as np
 from feature_reader import Feature_Reader
@@ -126,6 +125,15 @@ class Reader:
         self.width = config.width
         self.height = config.height
 
+        #Read all images into memory
+        self.images = np.load('../dataset/NREL_SSRL_BMS_SKY_CAM/all_image_gray_32.npy')
+        #Define a dictionary to store the indexes of images in self.images
+        self.file2idx = dict()
+        exist_image_list = np.loadtxt('../dataset/NREL_SSRL_BMS_SKY_CAM/exist_image_list.csv')
+        idx = 0
+        for f in exist_image_list:
+            self.file2idx[str(f.astype('int64'))] = idx
+            idx += 1
         # self.index = np.random.random_integers(0, self.train_num-1, size=(self.batch_size))
         #print the dataset info
         print '\033[1;31;40m'
@@ -148,10 +156,11 @@ class Reader:
                     img.append(np.zeros((self.height,self.width)))
                 else:
                     filename = str(int(data[idx, i]))
-                    y = filename[:4]; m = filename[4:6]; d = filename[6:8]
-                    path = sky_cam_raw_data_path + str(y) + '/' + str(m) + '/' + str(d) + '/' + str(filename) + '.jpg'
-                    tmp = cv2.resize(cv2.imread(path, 0), (self.height, self.width)).astype('float32')
-                    tmp = (tmp - mean) / std
+                    tmp = self.images[self.file2idx[filename]]
+                    # y = filename[:4]; m = filename[4:6]; d = filename[6:8]
+                    # path = sky_cam_raw_data_path + str(y) + '/' + str(m) + '/' + str(d) + '/' + str(filename) + '.jpg'
+                    # tmp = cv2.resize(cv2.imread(path, 0), (self.height, self.width)).astype('float32')
+                    # tmp = (tmp - mean) / std
                     img.append(tmp)
             img_list.append(img)
         return np.array(img_list)
