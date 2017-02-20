@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-#test
 from __future__ import division
 import numpy as np
 from feature_reader import Feature_Reader
