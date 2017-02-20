@@ -38,7 +38,7 @@ class Model:
                target: the groundtruth of the model
                config: the configuration of the model and it may contains following values:
                     lr: learning rate
-                    regressor: the regressor type chosen from {"lin", "msvr", "prob"}
+                    regressor: the regressor type chosen from {"mse", "msvr", "prob"}
                     epsilon, C: params for epsilon-insensitive multi-support regression
                     quantile: param for the quantile regression
         """
@@ -59,7 +59,7 @@ class Model:
         #modality configuration
         self.modality = config.modality
 
-        #regressor type {'lin', 'msvr', 'prob'}
+        #regressor type {'mse', 'msvr', 'prob'}
         self.regressor = config.regressor
 
         #train params
@@ -149,6 +149,9 @@ class Model:
 
         return output
 
+    def _Gaussian_Kernel(self, x, theta):
+        return tf.exp((-0.5 * tf.square(x / theta))) / theta / 2.0
+
     @property
     def prediction(self):
         """
@@ -168,8 +171,8 @@ class Model:
                 output_first_level_size += self.n_first_hidden
                 with tf.variable_scope("irradiance"):
                     cell_1 = tf.nn.rnn_cell.LSTMCell(self.n_first_hidden, state_is_tuple=True)
-                    cell_1 = tf.nn.rnn_cell.DropoutWrapper(cell=cell_1, output_keep_prob=self.keep_prob)
-                    cell_1 = tf.nn.rnn_cell.MultiRNNCell(cells=[cell_1] * 2, state_is_tuple=True)
+                    # cell_1 = tf.nn.rnn_cell.DropoutWrapper(cell=cell_1, output_keep_prob=self.keep_prob)
+                    # cell_1 = tf.nn.rnn_cell.MultiRNNCell(cells=[cell_1] * 2, state_is_tuple=True)
                     outputs_1, state_1 = tf.nn.dynamic_rnn(cell_1, self.data[0], dtype=tf.float32)
                     output_first_level.append(self._get_last_out(outputs_1))
 
@@ -180,8 +183,8 @@ class Model:
                 output_first_level_size += self.n_second_hidden
                 with tf.variable_scope("meteorological"):
                     cell_2 = tf.nn.rnn_cell.LSTMCell(self.n_second_hidden, state_is_tuple=True)
-                    cell_2 = tf.nn.rnn_cell.DropoutWrapper(cell=cell_2, output_keep_prob=self.keep_prob)
-                    cell_2 = tf.nn.rnn_cell.MultiRNNCell(cells=[cell_2] * 2, state_is_tuple=True)
+                    # cell_2 = tf.nn.rnn_cell.DropoutWrapper(cell=cell_2, output_keep_prob=self.keep_prob)
+                    # cell_2 = tf.nn.rnn_cell.MultiRNNCell(cells=[cell_2] * 2, state_is_tuple=True)
                     outputs_2, state_2 = tf.nn.dynamic_rnn(cell_2, self.data[1], dtype=tf.float32)
                     output_first_level.append(self._get_last_out(outputs_2))
 
@@ -230,7 +233,7 @@ class Model:
 
             # regression
             with tf.variable_scope("regression"):
-                weight = tf.Variable(tf.truncated_normal(shape=[output_first_level_size, self.n_target], stddev=2.0), dtype=tf.float32)
+                weight = tf.Variable(tf.truncated_normal(shape=[output_first_level_size, self.n_target], stddev=3.0), dtype=tf.float32)
                 bias = tf.Variable(tf.constant(0.0, shape=[self.n_target]), dtype=tf.float32)
                 self._prediction = tf.matmul(output, weight) + bias
 
@@ -247,12 +250,12 @@ class Model:
         Define the loss of the model and you can modify this section by using different regressor
         """
         if self._loss is None:
-            if self.regressor == "lin": #only work on the target is one-dim
+            if self.regressor == "mse": #only work on the target is one-dim
                 self._loss = tf.reduce_mean(tf.square(self.prediction - self.target)) + (self.w_sum + self.b_sum) * self.C
             elif self.regressor == "msvr":
                 #the loss of the train set
                 diff = self.prediction - self.target
-                err = tf.sqrt(tf.reduce_sum(tf.square(diff), reduction_indices=1)) - self.epsilon
+                err = tf.sqrt(tf.reduce_sum(tf.square(diff), reduction_indices=1)) - self.epsilon * self.n_target
                 err_greater_than_espilon = tf.cast(err > 0, tf.float32)
                 total_err = tf.reduce_mean(tf.mul(tf.square(err), err_greater_than_espilon))
 
@@ -261,6 +264,14 @@ class Model:
                 diff = self.prediction - self.target
                 coeff = tf.cast(diff>0, tf.float32) - self.quantile_rate
                 self._loss = tf.reduce_sum(tf.mul(diff, coeff)) + (self.w_sum + self.b_sum) * self.C
+            elif self.regressor == "mcc":
+                theta = 20
+                diff = self.prediction - self.target
+                ones_like_vec = tf.ones_like(diff)
+                diff_expand = tf.matmul(diff, tf.transpose(ones_like_vec))
+                # self._loss = tf.reduce_mean(tf.exp(-0.5 * tf.square((diff_expand - tf.transpose(diff_expand)) / theta)))
+                self._loss =  - tf.reduce_mean(self._Gaussian_Kernel(diff_expand - tf.transpose(diff_expand), 2 * theta)) - \
+                            tf.reduce_mean(self._Gaussian_Kernel(diff, theta))
 
         return self._loss
 
