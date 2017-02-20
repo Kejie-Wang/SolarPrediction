@@ -11,6 +11,8 @@ dataset/NREL_SSRL_BMS_IRANDMETE/input_data/train
 dataset/NREL_SSRL_BMS_IRANDMETE/input_data/validation
 dataset/NREL_SSRL_BMS_IRANDMETE/input_data/test
 dataset/NREL_SSRL_BMS_IRANDMETE/input_data/README
+dataset/NREL_SSRL_BMS_IRANDMETE/input_data/200011201205/
+dataset/NREL_SSRL_BMS_IRANDMETE/input_data/200601201205/
 
 dataset/NREL_SSRL_BMS_SKY_CAM/raw_data/
 dataset/NREL_SSRL_BMS_SKY_CAM/input_data/*.csv
@@ -25,15 +27,10 @@ References/
 #sftp ignore
 .ftpconfig
 
+# for mac
 **/.Ds_Store
 
-checkoutpoint
-model.ckpt.data-00000-of-00001
-model.ckpt.index
-model.ckpt.meta
-
 output/
-output_2006_2012/
 saved_model/
-saved_model_2006_2012/
-dataset/NREL_SSRL_BMS_IRANDMETE/input_data/200601201205/
+output2/
+saved_model2/
