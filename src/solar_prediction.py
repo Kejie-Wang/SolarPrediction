@@ -157,7 +157,7 @@ def main(_):
     print "save the file with", file_name
     print '\033[0m'
 
-    validation_last_rmse = float('inf')
+    validation_min = float('inf')
     best_test_result = None
     lr = config.lr
 
@@ -174,7 +174,7 @@ def main(_):
             print '\033[1;34;40m', "restore model", '\033[0m'
 
         # get the train, validation and test set
-        # train_set = reader.get_train_set()
+        train_set = reader.get_train_set()
         validation_set = reader.get_validation_set()
         test_set = reader.get_test_set()
 
@@ -194,25 +194,45 @@ def main(_):
             if i%config.test_step == 0:
                 #calculate the rmse and mae
                 print '\033[1;31;40m'
-                if config.regressor == "lin" or config.regressor == "msvr":
+                if config.regressor == "mse" or config.regressor == "msvr" or config.regressor == "mcc":
                     rmse, mae = do_eval(sess, [model.rmse, model.mae], test_feed)
                     print "Test  RMSE: ", rmse, "Test  MAE: ", mae
                     rmse, mae = do_eval(sess, [model.rmse, model.mae], validation_feed)
                     print "Valid RMSE: ", rmse, "Valid MAE: ", mae
-                    # rmse, mae = do_eval(sess, [model.rmse, model.mae], train_feed)
-                    # print "Train RMSE: ", rmse, "Train MAE: ", mae
-                    print "sum of w: ", sess.run(model.w_sum)
-                    print "bias of regression: ", sess.run(model.bias)
+
+                    mae = 0; num = 0; bs = 2000
+                    for ptr in range(bs, len(train_set[-1]), bs):
+                        batch = []
+                        for j in range(len(train_set)):
+                            batch.append(train_set[j][ptr-bs:ptr])
+                        train_feed = fill_feed_dict(x_ir, x_mete, x_sky_cam, hour_index, y_, keep_prob, batch, 1.0, modality)
+                        mae += do_eval(sess, model.mae, train_feed)
+                        num += 1
+                    print "Train MAE: ", mae / num
+
+                    print "sum of w:", sess.run(model.w_sum)
+                    print "bias of regression:", sess.run(model.bias)
                 elif config.regressor == "quantile":
                     coverage_rate = do_eval(sess, model.coverage_rate, test_feed)
                     print "Test  covarage rate:", coverage_rate
                     coverage_rate = do_eval(sess, model.coverage_rate, validation_feed)
                     print "Valid covarage rate:", coverage_rate
+
+                    coverage_rate = 0; num = 0; bs = 2000
+                    for ptr in range(bs, len(train_set[-1]), bs):
+                        batch = []
+                        for j in range(len(train_set)):
+                            batch.append(train_set[j][ptr-bs:ptr])
+                        train_feed = fill_feed_dict(x_ir, x_mete, x_sky_cam, hour_index, y_, keep_prob, batch, 1.0, modality)
+                        coverage_rate += do_eval(sess, model.coverage_rate, train_feed)
+                        num += 1
+                    print "Train covarage rate:", coverage_rate / num
                     # coverage_rate = do_eval(sess, model.coverage_rate, train_feed)
                     # print "Train covarage rate:", coverage_rate
                     print "sum of w: ", sess.run(model.w_sum)
                     print "bias of regression: ", sess.run(model.bias)
                 print '\033[0m'
+                # print do_eval(sess, model.test, test_feed)
 
             # train
             batch = reader.next_batch()
@@ -224,19 +244,28 @@ def main(_):
                 feed_dict = fill_feed_dict(x_ir, x_mete, x_sky_cam, hour_index, y_, keep_prob, batch, 1.0, modality)
                 print '\033[1;32;40m', "Step", i, "train loss:",do_eval(sess, model.loss, feed_dict), '\033[0m'
 
-            # validation
-            validation_rmse = do_eval(sess, model.rmse, validation_feed)
+            if i%10 ==0:
+                # validation
+                #compare the validation with the last loss
+                if config.regressor == "mse" or config.regressor == "msvr" or config.regressor == "mcc":
+                    validation_rmse = do_eval(sess, model.rmse, validation_feed)
+                    if validation_rmse < validation_min:
+                        validation_min = validation_rmse
+                        best_test_result = do_eval(sess, model.prediction, test_feed)
+                        np.savetxt(saved_output_folder_path + file_name + ".res", best_test_result, fmt="%.4f", delimiter=',')
+                        if i>1000:
+                            save_path = saver.save(sess, saved_model_folder_path + "model.ckpt")
+                            print '\033[1;34;40m', "save the model", '\033[0m'
+                elif config.regressor == "quantile":
+                    validation_coverage_rate= do_eval(sess, model.coverage_rate, validation_feed)
+                    if abs(validation_coverage_rate - config.quantile_rate) < validation_min:
+                        validation_min = abs(validation_coverage_rate - config.quantile_rate)
+                        best_test_result = do_eval(sess, model.prediction, test_feed)
+                        np.savetxt(saved_output_folder_path + file_name + ".res", best_test_result, fmt="%.4f", delimiter=',')
 
-            #compare the validation with the last loss
-            if validation_rmse < validation_last_rmse:
-                validation_last_rmse = validation_rmse
-                best_test_result = do_eval(sess, model.prediction, test_feed)
-                np.savetxt(saved_output_folder_path + file_name + ".res", best_test_result, fmt="%.4f", delimiter=',')
-
-                if i>1500:
-                    save_path = saver.save(sess, saved_model_folder_path + "model.ckpt")
-                    print '\033[1;34;40m', "save the model", '\033[0m'
-
+                        # if i>500:
+                        #     save_path = saver.save(sess, saved_model_folder_path + "model.ckpt")
+                        #     print '\033[1;34;40m', "save the model", '\033[0m'
 
 if __name__ == "__main__":
     tf.app.run()
