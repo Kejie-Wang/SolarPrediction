@@ -33,7 +33,7 @@
 70,71,Photometer 500nm MS110,Flag,W/m2/nm
 72,73,Photometer 675nm MS110,Flag,W/m2/nm
 74,75,Photometer 778nm MS110,Flag,W/m2/nm
-76,77,Diffuse PSP (shadowband),Flag,W/m2
+76,77,Diffuse PSP (shadowband corr.),Flag,W/m2
 78,79,Diffuse PSP (ventilated),Flag,W/m2
 80,81,Diffuse 8-48 (ventilated),Flag,W/m2
 82,83,Diffuse CM-22 (ventilated),Flag,W/m2
@@ -60,7 +60,7 @@
 124,125,Est. Sea-Level Pressure,Flag,mBar
 126,127,Precipitation,Flag,mm
 128,129,Global CM3 (CNR1),Flag,W/m2
-130,131,Upwelling Shortwave CM3,Flag,W/m2
+130,131,Upwelling Shortwave CM3 (CNR1),Flag,W/m2
 132,133,Downwelling Infrared CG3 (CNR1),Flag,W/m2
 134,135,Upwelling Infrared CG3 (CNR1),Flag,W/m2
 136,137,Net Infrared CNR1 (atmos.),Flag,W/m2

@@ -1,52 +1,35 @@
 Downwelling Infrared PIR (vent.),88
+Global 40-South PSP,24
 Global CM3 (CNR1),128
 Direct CH1,58
 Diffuse CM-22 (ventilated),82
-Global PSP,6
-Upwelling Shortwave LI-200,174
-Global 40-South PSP,24
 Global UV-Total TUVR,30
 Global UVE 501A (Index),48
-Global 90-West PSP,196
-Net Radiation (Eppley),154
+Global UVB 501A,32
 Global SP-Lite,20
-Global CM-22 (ventilated),12
-Global 90-East LI-200,190
-Direct UV-Total,60
-Global 90-South LI-200,194
+Global PSP,6
+Net Radiation (Eppley),154
 Direct UVA CUVA2,62
 Net Radiation (CNR1),156
-Global 90-North PSP,184
 Global 40-South LI-200,26
-Global 90-South PSP,192
 Global UVE 501A (MED/hr),34
 Global UVB UVB-1,46
-Global Apogee,66
 Global Quantum LI-190,22
-Global UVB 501A,32
+Upwelling Infrared CG3 (CNR1),134
 Direct RG780 NIP,56
 Global Normal CM-21,28
-Global 90-North LI-200,186
-Upwelling Infrared CG3 (CNR1),134
-Upwelling Quantum LI-190,176
-Direct NIP (primary),50
+Direct LI-201,54
 Direct UVB CUVB2,64
 Global UVB MS210W,36
 Net Infrared PIRs (atmos.),168
 Global RG780 PSP,14
-Upwelling Shortwave CM3,130
-Global PSP (vent/zenith corr.),138
-Global 90-East PSP,188
 Direct NIP (secondary),52
 Global CM6b,18
-Global Photometric LI-210,68
 Diffuse PSP (vent/thermal corr.),150
 Global TSP-1,16
-Global TSP-700,172
 Downwelling Infrared CG4 (vent.),90
 Upwelling Infrared PIR,92
 Downwelling Infrared CG3 (CNR1),132
-Global 90-West LI-200,198
 Global UVA CUVA1,38
 Global UVB UV-S-B-T,44
 Upwelling Shortwave PSP,86
@@ -54,8 +37,6 @@ Net Infrared CNR1 (atmos.),136
 Global UVB CUVB1,40
 Diffuse PSP (ventilated),78
 Global UVA UV-S-A-T,42
-Diffuse PSP (shadowband),76
-Direct LI-201,54
-Global LI-200 (primary),10
+Direct NIP (primary),50
 Global PSP (ventilated),8
 Diffuse 8-48 (ventilated),80
