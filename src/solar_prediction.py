@@ -12,6 +12,9 @@ from util import MSE_And_MAE
 import time
 import sys
 
+model_path = '../saved_model_1/'
+output_path = '../output_model_1/'
+
 def fill_feed_dict(x_ir_placeholder, \
                 x_mete_placeholder, \
                 x_sky_cam_placeholder, \
@@ -48,6 +51,9 @@ def make_folder_path(config, path):
     @brief make the saved model or the result output folder
             in fmt: regressor/modality/n_step+n_shift/
     """
+    if os.path.exists(path):
+        os.mkdir(path)
+    path += str(config.data_step) + '_data_step'
     if not os.path.exists(path):
         os.mkdir(path)
     path += config.regressor + "/"
@@ -147,8 +153,8 @@ def main(_):
     #new a saver to save the model
     saver = tf.train.Saver()
 
-    saved_model_folder_path = make_folder_path(config, "../saved_model2/")
-    saved_output_folder_path = make_folder_path(config,  "../output2/")
+    saved_model_folder_path = make_folder_path(config, model_path)
+    saved_output_folder_path = make_folder_path(config,  output_path)
     file_name = get_file_name(config)
 
     print '\033[1;31;40m'
@@ -263,9 +269,9 @@ def main(_):
                         best_test_result = do_eval(sess, model.prediction, test_feed)
                         np.savetxt(saved_output_folder_path + file_name + ".res", best_test_result, fmt="%.4f", delimiter=',')
 
-                        # if i>500:
-                        #     save_path = saver.save(sess, saved_model_folder_path + "model.ckpt")
-                        #     print '\033[1;34;40m', "save the model", '\033[0m'
+                        if i>500:
+                            save_path = saver.save(sess, saved_model_folder_path + "model.ckpt")
+                            print '\033[1;34;40m', "save the model", '\033[0m'
 
 if __name__ == "__main__":
     tf.app.run()
