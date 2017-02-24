@@ -82,6 +82,16 @@ class Reader:
             sky_cam_train_index, sky_cam_validation_index, sky_cam_test_index = sky_cam_feature_reader.get_index()
             train_index.append(sky_cam_train_index); validation_index.append(sky_cam_validation_index); test_index.append(sky_cam_test_index)
 
+            #Read all images into memory
+            self.images = np.load('../dataset/NREL_SSRL_BMS_SKY_CAM/all_image_gray_32.npy')
+            #Define a dictionary to store the indexes of images in self.images
+            self.file2idx = dict()
+            exist_image_list = np.loadtxt('../dataset/NREL_SSRL_BMS_SKY_CAM/exist_image_list.csv')
+            idx = 0
+            for f in exist_image_list:
+                self.file2idx[str(f.astype('int64'))] = idx
+                idx += 1
+
         # read target data
         target_reader = Target_Reader(target_train_data_path, target_validation_data_path, target_test_data_path, max_shift, h_ahead, data_step, n_target)
         target_train_index, target_validation_index, target_test_index = target_reader.get_index()
@@ -125,15 +135,6 @@ class Reader:
         self.width = config.width
         self.height = config.height
 
-        #Read all images into memory
-        self.images = np.load('../dataset/NREL_SSRL_BMS_SKY_CAM/all_image_gray_32.npy')
-        #Define a dictionary to store the indexes of images in self.images
-        self.file2idx = dict()
-        exist_image_list = np.loadtxt('../dataset/NREL_SSRL_BMS_SKY_CAM/exist_image_list.csv')
-        idx = 0
-        for f in exist_image_list:
-            self.file2idx[str(f.astype('int64'))] = idx
-            idx += 1
         # self.index = np.random.random_integers(0, self.train_num-1, size=(self.batch_size))
         #print the dataset info
         print '\033[1;31;40m'
