@@ -30,7 +30,5 @@ References/
 # for mac
 **/.Ds_Store
 
-output/
-saved_model/
-output2/
-saved_model2/
+output_model_1/
+saved_model_1/
