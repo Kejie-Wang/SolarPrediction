@@ -3,6 +3,10 @@ __author__= 'WANG Kejie<wang_kejie@foxmail.com>'
 __date__ = '21/11/2016'
 
 import os
+import sys
+# append the upper dir into the system path
+sys.path.append('../')
+
 import tensorflow as tf
 import numpy as np
 from config import Model_Config
@@ -10,10 +14,9 @@ from reader import Reader
 from model import Model
 from util import MSE_And_MAE
 import time
-import sys
 
-model_path = '../saved_model_1/'
-output_path = '../output_model_1/'
+model_path = '../../saved_model_1/'
+output_path = '../../output_model_1/'
 
 def fill_feed_dict(x_ir_placeholder, \
                 x_mete_placeholder, \
@@ -51,7 +54,7 @@ def make_folder_path(config, path):
     @brief make the saved model or the result output folder
             in fmt: regressor/modality/n_step+n_shift/
     """
-    if os.path.exists(path):
+    if not os.path.exists(path):
         os.mkdir(path)
     path += str(config.data_step) + '_data_step'
     if not os.path.exists(path):
