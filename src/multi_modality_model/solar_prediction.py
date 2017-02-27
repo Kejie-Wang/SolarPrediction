@@ -4,9 +4,6 @@ __date__ = '21/11/2016'
 
 import os
 import sys
-# append the upper dir into the system path
-sys.path.append('../')
-
 import tensorflow as tf
 import numpy as np
 from config import Model_Config

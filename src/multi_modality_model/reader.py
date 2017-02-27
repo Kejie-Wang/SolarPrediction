@@ -1,5 +1,8 @@
 # -*- coding: utf-8 -*-
 from __future__ import division
+import sys
+# append the upper dir into the system path
+sys.path.append('../')
 import numpy as np
 from feature_reader import Feature_Reader
 from target_reader import Target_Reader
