@@ -22,7 +22,8 @@ mete_test_data_path = "../../dataset/NREL_SSRL_BMS_IRANDMETE/input_data/test/met
 sky_cam_test_data_path = "../../dataset/NREL_SSRL_BMS_SKY_CAM/input_data/test/sky_cam_test_data.csv"
 target_test_data_path = "../../dataset/NREL_SSRL_BMS_IRANDMETE/input_data/test/target_test_data.csv"
 
-sky_cam_raw_data_path = '../../dataset/NREL_SSRL_BMS_SKY_CAM/raw_data/'
+sky_cam_image_data_path = '../../dataset/NREL_SSRL_BMS_SKY_CAM/input_data/all_image_gray_64.npy'
+sky_cam_exist_image_list_path = '../../dataset/NREL_SSRL_BMS_SKY_CAM/input_data/sky_cam_image_name.csv'
 
 class Reader:
 
@@ -83,13 +84,13 @@ class Reader:
             train_index.append(sky_cam_train_index); validation_index.append(sky_cam_validation_index); test_index.append(sky_cam_test_index)
 
             #Read all images into memory
-            self.images = np.load('../dataset/NREL_SSRL_BMS_SKY_CAM/all_image_gray_32.npy')
+            self.images = np.load(sky_cam_image_data_path)
             #Define a dictionary to store the indexes of images in self.images
             self.file2idx = dict()
-            exist_image_list = np.loadtxt('../dataset/NREL_SSRL_BMS_SKY_CAM/exist_image_list.csv')
+            exist_image_list = np.loadtxt(sky_cam_exist_image_list_path, dtype=np.int)
             idx = 0
             for f in exist_image_list:
-                self.file2idx[str(f.astype('int64'))] = idx
+                self.file2idx[f] = idx
                 idx += 1
 
         # read target data
@@ -147,21 +148,18 @@ class Reader:
         print '\033[0m'
 
     def path2image(self, data):
-        mean = cv2.resize(np.load('mean.npy'), (self.height, self.width)).astype('float32')
-        std = cv2.resize(np.load('std.npy'), (self.height, self.width)).astype('float32')
+        """
+        data : [batch_size, n_step_3]
+        """
         img_list = []
         for idx in range(len(data)):
             img = []
             for i in range(self.n_step_3):
-                if data[idx, i] == -11111:
+                if int(data[idx, i]) == -11111:
                     img.append(np.zeros((self.height,self.width)))
                 else:
-                    filename = str(int(data[idx, i]))
+                    filename = int(data[idx, i])
                     tmp = self.images[self.file2idx[filename]]
-                    # y = filename[:4]; m = filename[4:6]; d = filename[6:8]
-                    # path = sky_cam_raw_data_path + str(y) + '/' + str(m) + '/' + str(d) + '/' + str(filename) + '.jpg'
-                    # tmp = cv2.resize(cv2.imread(path, 0), (self.height, self.width)).astype('float32')
-                    # tmp = (tmp - mean) / std
                     img.append(tmp)
             img_list.append(img)
         return np.array(img_list)
