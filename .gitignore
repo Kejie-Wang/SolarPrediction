@@ -3,7 +3,7 @@
 *.ckpt
 *.tar.gz
 src/checkpoint
-src/reader_test.py
+src/multi_modality_model/reader_test.py
 
 #dataset ignore
 dataset/NREL_SSRL_BMS_IRANDMETE/raw_data/
@@ -13,6 +13,8 @@ dataset/NREL_SSRL_BMS_IRANDMETE/input_data/test
 dataset/NREL_SSRL_BMS_IRANDMETE/input_data/README
 dataset/NREL_SSRL_BMS_IRANDMETE/input_data/200011201205/
 dataset/NREL_SSRL_BMS_IRANDMETE/input_data/200601201205/
+dataset/NREL_SSRL_BMS_IRANDMETE/input_data/200011201205_15/
+
 
 dataset/NREL_SSRL_BMS_SKY_CAM/raw_data/
 dataset/NREL_SSRL_BMS_SKY_CAM/input_data/*.csv
@@ -20,6 +22,8 @@ dataset/NREL_SSRL_BMS_SKY_CAM/input_data/train
 dataset/NREL_SSRL_BMS_SKY_CAM/input_data/test
 dataset/NREL_SSRL_BMS_SKY_CAM/input_data/validation
 dataset/NREL_SSRL_BMS_SKY_CAM/input_data/README
+dataset/NREL_SSRL_BMS_SKY_CAM/exist_image_list.csv
+dataset/NREL_SSRL_BMS_SKY_CAM/input_data/all_image_gray_64.npy
 
 #reference ignore
 References/
