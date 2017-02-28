@@ -53,7 +53,7 @@ def make_folder_path(config, path):
     """
     if not os.path.exists(path):
         os.mkdir(path)
-    path += str(config.data_step) + '_data_step'
+    path += str(config.data_step) + '_data_step/'
     if not os.path.exists(path):
         os.mkdir(path)
     path += config.regressor + "/"
@@ -200,7 +200,7 @@ def main(_):
             if i%config.test_step == 0:
                 #calculate the rmse and mae
                 print '\033[1;31;40m'
-                if config.regressor == "mse" or config.regressor == "msvr" or config.regressor == "mcc":
+                if config.regressor == "mse" or config.regressor == "msvr" or config.regressor == "meef":
                     rmse, mae = do_eval(sess, [model.rmse, model.mae], test_feed)
                     print "Test  RMSE: ", rmse, "Test  MAE: ", mae
                     rmse, mae = do_eval(sess, [model.rmse, model.mae], validation_feed)
@@ -253,13 +253,13 @@ def main(_):
             if i%10 ==0:
                 # validation
                 #compare the validation with the last loss
-                if config.regressor == "mse" or config.regressor == "msvr" or config.regressor == "mcc":
+                if config.regressor == "mse" or config.regressor == "msvr" or config.regressor == "meef":
                     validation_rmse = do_eval(sess, model.rmse, validation_feed)
                     if validation_rmse < validation_min:
                         validation_min = validation_rmse
                         best_test_result = do_eval(sess, model.prediction, test_feed)
                         np.savetxt(saved_output_folder_path + file_name + ".res", best_test_result, fmt="%.4f", delimiter=',')
-                        if i>1000:
+                        if i>1500:
                             save_path = saver.save(sess, saved_model_folder_path + "model.ckpt")
                             print '\033[1;34;40m', "save the model", '\033[0m'
                 elif config.regressor == "quantile":

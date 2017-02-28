@@ -264,7 +264,7 @@ class Model:
                 diff = self.prediction - self.target
                 coeff = tf.cast(diff>0, tf.float32) - self.quantile_rate
                 self._loss = tf.reduce_sum(tf.mul(diff, coeff)) + (self.w_sum + self.b_sum) * self.C
-            elif self.regressor == "mcc":
+            elif self.regressor == "meef":
                 theta = 20
                 diff = self.prediction - self.target
                 ones_like_vec = tf.ones_like(diff)
