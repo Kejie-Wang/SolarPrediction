@@ -15,6 +15,7 @@ dataset/NREL_SSRL_BMS_IRANDMETE/input_data/200011201205/
 dataset/NREL_SSRL_BMS_IRANDMETE/input_data/200601201205/
 dataset/NREL_SSRL_BMS_IRANDMETE/input_data/200011201205_15/
 
+dataset/NREL_SSRL_BMS_IRANDMETE/wavedec_model_input_data/
 
 dataset/NREL_SSRL_BMS_SKY_CAM/raw_data/
 dataset/NREL_SSRL_BMS_SKY_CAM/input_data/*.csv
