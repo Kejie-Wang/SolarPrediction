@@ -30,9 +30,10 @@ sky_cam_exist_image_list_path = '../../dataset/NREL_SSRL_BMS_SKY_CAM/input_data/
 
 class Reader:
 
-    def _get_hour_index_and_filter_data(self, h_ahead, data_step, data_index):
+    def _get_hour_index_and_filter_data(self, max_shift, h_ahead, data_step, data_index):
         # get hour index
-        hour_index = np.arange(h_ahead, max(data_index)*data_step+h_ahead+1, data_step)
+        start_hour_index = (max_shift + h_ahead) % HOUR_IN_A_DAY
+        hour_index = np.arange(start_hour_index, max(data_index)*data_step+start_hour_index+1, data_step)
         hour_index = hour_index[data_index] % HOUR_IN_A_DAY
         # filter the data
         index = np.logical_and(hour_index>=5, hour_index<=18)
@@ -109,9 +110,9 @@ class Reader:
         # get the hour index
         # filter the hour index less than 5 or bigger than 18
         # the irradiance in this range is nearly zero and it need not forecast
-        train_index, self.train_hour_index = self._get_hour_index_and_filter_data(h_ahead, data_step, train_index)
-        validation_index, self.validation_hour_index = self._get_hour_index_and_filter_data(h_ahead, data_step, validation_index)
-        test_index, self.test_hour_index = self._get_hour_index_and_filter_data(h_ahead, data_step, test_index)
+        train_index, self.train_hour_index = self._get_hour_index_and_filter_data(max_shift, h_ahead, data_step, train_index)
+        validation_index, self.validation_hour_index = self._get_hour_index_and_filter_data(max_shift, h_ahead, data_step, validation_index)
+        test_index, self.test_hour_index = self._get_hour_index_and_filter_data(max_shift, h_ahead, data_step, test_index)
 
         if self.modality[0] == 1:
             self.ir_train_data, self.ir_validation_data, self.ir_test_data = ir_feature_reader.get_data(train_index, validation_index, test_index)
