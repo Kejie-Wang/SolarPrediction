@@ -7,37 +7,48 @@ import numpy as np
 from feature_reader import Feature_Reader
 from target_reader import Target_Reader
 import cv2
+import pywt
 
+MINUTES_TO_AVG = 15
 HOUR_IN_A_DAY = 24
 
-ir_train_data_path = "../../dataset/NREL_SSRL_BMS_IRANDMETE/input_data/train/ir_train_data.csv"
-mete_train_data_path = "../../dataset/NREL_SSRL_BMS_IRANDMETE/input_data/train/mete_train_data.csv"
-sky_cam_train_data_path = "../../dataset/NREL_SSRL_BMS_SKY_CAM/input_data/train/sky_cam_train_data.csv"
-target_train_data_path = "../../dataset/NREL_SSRL_BMS_IRANDMETE/input_data/train/target_train_data.csv"
+ir_train_data_path = "../../dataset/NREL_SSRL_BMS_IRANDMETE/wavedec_input_data/train/ir_train_data.csv"
+mete_train_data_path = "../../dataset/NREL_SSRL_BMS_IRANDMETE/wavedec_input_data/train/mete_train_data.csv"
+target_train_data_path = "../../dataset/NREL_SSRL_BMS_IRANDMETE/wavedec_input_data/train/target_train_hourly_data.csv"
 
-ir_validation_data_path = "../../dataset/NREL_SSRL_BMS_IRANDMETE/input_data/validation/ir_validation_data.csv"
-mete_validation_data_path = "../../dataset/NREL_SSRL_BMS_IRANDMETE/input_data/validation/mete_validation_data.csv"
-sky_cam_validation_data_path = "../../dataset/NREL_SSRL_BMS_SKY_CAM/input_data/validation/sky_cam_validation_data.csv"
-target_validation_data_path = "../../dataset/NREL_SSRL_BMS_IRANDMETE/input_data/validation/target_validation_data.csv"
+ir_validation_data_path = "../../dataset/NREL_SSRL_BMS_IRANDMETE/wavedec_input_data/validation/ir_validation_data.csv"
+mete_validation_data_path = "../../dataset/NREL_SSRL_BMS_IRANDMETE/wavedec_input_data/validation/mete_validation_data.csv"
+target_validation_data_path = "../../dataset/NREL_SSRL_BMS_IRANDMETE/wavedec_input_data/validation/target_validation_hourly_data.csv"
 
-ir_test_data_path = "../../dataset/NREL_SSRL_BMS_IRANDMETE/input_data/test/ir_test_data.csv"
-mete_test_data_path = "../../dataset/NREL_SSRL_BMS_IRANDMETE/input_data/test/mete_test_data.csv"
-sky_cam_test_data_path = "../../dataset/NREL_SSRL_BMS_SKY_CAM/input_data/test/sky_cam_test_data.csv"
-target_test_data_path = "../../dataset/NREL_SSRL_BMS_IRANDMETE/input_data/test/target_test_data.csv"
+ir_test_data_path = "../../dataset/NREL_SSRL_BMS_IRANDMETE/wavedec_input_data/test/ir_test_data.csv"
+mete_test_data_path = "../../dataset/NREL_SSRL_BMS_IRANDMETE/wavedec_input_data/test/mete_test_data.csv"
+target_test_data_path = "../../dataset/NREL_SSRL_BMS_IRANDMETE/wavedec_input_data/test/target_test_hourly_data.csv"
 
-sky_cam_image_data_path = '../../dataset/NREL_SSRL_BMS_SKY_CAM/input_data/all_image_gray_64.npy'
-sky_cam_exist_image_list_path = '../../dataset/NREL_SSRL_BMS_SKY_CAM/input_data/sky_cam_image_name.csv'
 
 class Reader:
 
-    def _get_hour_index_and_filter_data(self, h_ahead, data_step, data_index):
+    def _get_hour_index_and_filter_data(self, max_shift, h_ahead, data_step, data_index):
         # get hour index
-        hour_index = np.arange(h_ahead, max(data_index)*data_step+h_ahead+1, data_step)
+        start_hour_index = (max_shift + h_ahead) % HOUR_IN_A_DAY
+        hour_index = np.arange(start_hour_index, max(data_index)*data_step+start_hour_index+1, data_step)
         hour_index = hour_index[data_index] % HOUR_IN_A_DAY
         # filter the data
         index = np.logical_and(hour_index>=5, hour_index<=18)
 
         return data_index[index], np.reshape(hour_index[index], [-1, 1])
+
+    def _wavelet_dec(self, data, wavelet, level):
+        '''
+        data: [batch_size, n_step, feature_num]
+        '''
+        # transpose the data into [batch_size, feature_num, n_step]
+        data = np.transpose(data, [0, 2, 1])
+        # [batch_size, feature_num, n_step] ====> a list of coeff has length level+1, each of which is in shape [batch_size, feature_num, n_step_new]
+        coeffs = pywt.wavedec(data, wavelet=wavelet, level=level)
+        for i in range(len(coeffs)):
+            # [batch_size, feature_num, n_step_new] ===> [batch_size, n_step_new, feature_num]
+            coeffs[i] = np.transpose(coeffs[i], [0, 2, 1])
+        return coeffs
 
     def __init__(self, config):
         """
@@ -53,48 +64,35 @@ class Reader:
 
         n_step_1 = config.n_step_1
         n_step_2 = config.n_step_2
-        n_step_3 = config.n_step_3
+
+        wavelet = config.wavelet
+        level = config.level
 
         shift = []
         if self.modality[0] == 1:
             shift.append(config.n_shift_1)
         if self.modality[1] == 1:
             shift.append(config.n_shift_2)
-        if self.modality[2] == 1:
-            shift.append(config.n_shift_3)
+
         max_shift = max(shift)
+        MINUTE_TO_AVG_IN_HOUR = 60 // MINUTES_TO_AVG
 
         train_index = []; validation_index = []; test_index = []
         #read first modality data
         if self.modality[0] == 1:
             shift_day_1 = (max_shift - config.n_shift_1) // data_step; assert (max_shift - config.n_shift_1)%data_step == 0
-            ir_feature_reader = Feature_Reader(ir_train_data_path, ir_validation_data_path, ir_test_data_path, n_step_1, data_step, shift_day_1)
+            ir_feature_reader = Feature_Reader(ir_train_data_path, ir_validation_data_path, ir_test_data_path, \
+                n_step_1*MINUTE_TO_AVG_IN_HOUR , data_step*MINUTE_TO_AVG_IN_HOUR, shift_day_1*MINUTE_TO_AVG_IN_HOUR)
             ir_train_index, ir_validation_index, ir_test_index = ir_feature_reader.get_index()
             train_index.append(ir_train_index); validation_index.append(ir_validation_index); test_index.append(ir_test_index)
 
         #read second modality data
         if self.modality[1] == 1:
             shift_day_2 = (max_shift - config.n_shift_2) // data_step; assert (max_shift - config.n_shift_2)%data_step == 0
-            mete_feature_reader = Feature_Reader(mete_train_data_path, mete_validation_data_path, mete_test_data_path, n_step_2, data_step, shift_day_2)
+            mete_feature_reader = Feature_Reader(mete_train_data_path, mete_validation_data_path, mete_test_data_path, \
+                n_step_2*MINUTE_TO_AVG_IN_HOUR, data_step*MINUTE_TO_AVG_IN_HOUR, shift_day_2*MINUTE_TO_AVG_IN_HOUR)
             mete_train_index, mete_validation_index, mete_test_index = mete_feature_reader.get_index()
             train_index.append(mete_train_index); validation_index.append(mete_validation_index); test_index.append(mete_test_index)
-
-        #read third modality data
-        if self.modality[2] == 1:
-            shift_day_3 = (max_shift - config.n_shift_3) // data_step; assert (max_shift - config.n_shift_3)%data_step == 0
-            sky_cam_feature_reader = Feature_Reader(sky_cam_train_data_path, sky_cam_validation_data_path, sky_cam_test_data_path, n_step_3, data_step, shift_day_3)
-            sky_cam_train_index, sky_cam_validation_index, sky_cam_test_index = sky_cam_feature_reader.get_index()
-            train_index.append(sky_cam_train_index); validation_index.append(sky_cam_validation_index); test_index.append(sky_cam_test_index)
-
-            #Read all images into memory
-            self.images = np.load(sky_cam_image_data_path)
-            #Define a dictionary to store the indexes of images in self.images
-            self.file2idx = dict()
-            exist_image_list = np.loadtxt(sky_cam_exist_image_list_path, dtype=np.int)
-            idx = 0
-            for f in exist_image_list:
-                self.file2idx[f] = idx
-                idx += 1
 
         # read target data
         target_reader = Target_Reader(target_train_data_path, target_validation_data_path, target_test_data_path, max_shift, h_ahead, data_step, n_target)
@@ -109,19 +107,34 @@ class Reader:
         # get the hour index
         # filter the hour index less than 5 or bigger than 18
         # the irradiance in this range is nearly zero and it need not forecast
-        train_index, self.train_hour_index = self._get_hour_index_and_filter_data(h_ahead, data_step, train_index)
-        validation_index, self.validation_hour_index = self._get_hour_index_and_filter_data(h_ahead, data_step, validation_index)
-        test_index, self.test_hour_index = self._get_hour_index_and_filter_data(h_ahead, data_step, test_index)
+        train_index, self.train_hour_index = self._get_hour_index_and_filter_data(max_shift, h_ahead, data_step, train_index)
+        validation_index, self.validation_hour_index = self._get_hour_index_and_filter_data(max_shift, h_ahead, data_step, validation_index)
+        test_index, self.test_hour_index = self._get_hour_index_and_filter_data(max_shift, h_ahead, data_step, test_index)
 
         if self.modality[0] == 1:
-            self.ir_train_data, self.ir_validation_data, self.ir_test_data = ir_feature_reader.get_data(train_index, validation_index, test_index)
-            self.ir_mean, self.ir_std = ir_feature_reader.get_mean_std()
+            ir_train_data, ir_validation_data, ir_test_data = ir_feature_reader.get_data(train_index, validation_index, test_index)
+            ir_mean, ir_std = ir_feature_reader.get_mean_std()
+            self.ir_train_data = self._wavelet_dec((ir_train_data - ir_mean) / ir_std, wavelet, level)
+            self.ir_validation_data = self._wavelet_dec((ir_validation_data - ir_mean) / ir_std, wavelet, level)
+            self.ir_test_data = self._wavelet_dec((ir_test_data - ir_mean) / ir_std, wavelet, level)
+            n_step_level = []
+            for d in self.ir_test_data:
+                n_step_level.append(d.shape[1])
+                print d.shape
+            print "ir modality", n_step_level
         if self.modality[1] == 1:
-            self.mete_train_data, self.mete_validation_data, self.mete_test_data = mete_feature_reader.get_data(train_index, validation_index, test_index)
-            self.mete_mean, self.mete_std = mete_feature_reader.get_mean_std()
-        if self.modality[2] == 1:
-            self.sky_cam_train_data, self.sky_cam_validation_data, self.sky_cam_test_data = sky_cam_feature_reader.get_data(train_index, validation_index, test_index)
+            mete_train_data, mete_validation_data, mete_test_data = mete_feature_reader.get_data(train_index, validation_index, test_index)
+            mete_mean, mete_std = mete_feature_reader.get_mean_std()
+            self.mete_train_data = self._wavelet_dec((mete_train_data - mete_mean) / mete_std, wavelet, level)
+            self.mete_validation_data = self._wavelet_dec((mete_validation_data - mete_mean) / mete_std, wavelet, level)
+            self.mete_test_data = self._wavelet_dec((mete_test_data - mete_std) / mete_std, wavelet, level)
+            n_step_level = []
+            for d in self.mete_test_data:
+                n_step_level.append(d.shape[1])
+                print d.shape
+            print "mete modality", n_step_level
 
+        self.n_step_level = n_step_level
         self.target_train_data, self.target_validation_data, self.target_test_data = target_reader.get_data(train_index, validation_index, test_index)
 
         self.test_missing_index = target_reader.get_test_missing_index(test_index)
@@ -135,10 +148,6 @@ class Reader:
 
         self.batch_size = config.batch_size
 
-        self.n_step_3 = config.n_step_3
-        self.width = config.width
-        self.height = config.height
-
         # self.index = np.random.random_integers(0, self.train_num-1, size=(self.batch_size))
         #print the dataset info
         print '\033[1;31;40m'
@@ -150,22 +159,8 @@ class Reader:
         print "batch size:", self.batch_size
         print '\033[0m'
 
-    def path2image(self, data):
-        """
-        data : [batch_size, n_step_3]
-        """
-        img_list = []
-        for idx in range(len(data)):
-            img = []
-            for i in range(self.n_step_3):
-                if int(data[idx, i]) == -11111:
-                    img.append(np.zeros((self.height,self.width)))
-                else:
-                    filename = int(data[idx, i])
-                    tmp = self.images[self.file2idx[filename]]
-                    img.append(tmp)
-            img_list.append(img)
-        return np.array(img_list)
+    def get_n_step_level(self):
+        return self.n_step_level
 
     def next_batch(self):
         """
@@ -177,14 +172,15 @@ class Reader:
         index = np.random.choice(np.arange(self.train_num), self.batch_size, replace=False)
         batch = []
         if self.modality[0] == 1:
-            ir_batch_data = (self.ir_train_data[index] - self.ir_mean) / self.ir_std
+            ir_batch_data = []
+            for l in range(len(self.ir_train_data)):
+                ir_batch_data.append(self.ir_train_data[l][index])
             batch.append(ir_batch_data)
         if self.modality[1] == 1:
-            mete_batch_data = (self.mete_train_data[index] - self.mete_mean) / self.mete_std
+            mete_batch_data = []
+            for l in range(len(self.mete_train_data)):
+                mete_batch_data.append(self.mete_train_data[l][index])
             batch.append(mete_batch_data)
-        if self.modality[2] == 1:
-            sky_cam_batch_data = self.path2image(self.sky_cam_train_data[index])
-            batch.append(sky_cam_batch_data)
         hour_index_batch_data = self.train_hour_index[index]
         batch.append(hour_index_batch_data)
         target_batch_data = self.target_train_data[index]
@@ -198,11 +194,9 @@ class Reader:
         """
         train_set = []
         if self.modality[0] == 1:
-            train_set.append((self.ir_train_data - self.ir_mean) / self.ir_std)
+            train_set.append(self.ir_train_data)
         if self.modality[1] == 1:
-            train_set.append((self.mete_train_data - self.mete_mean) / self.mete_std)
-        if self.modality[2] == 1:
-            train_set.append(self.path2image(self.sky_cam_train_data))
+            train_set.append(self.mete_train_data)
         train_set.append(self.train_hour_index)
         train_set.append(self.target_train_data)
 
@@ -217,11 +211,9 @@ class Reader:
         """
         validation_set = []
         if self.modality[0] == 1:
-            validation_set.append((self.ir_validation_data - self.ir_mean) / self.ir_std)
+            validation_set.append(self.ir_validation_data)
         if self.modality[1] == 1:
-            validation_set.append((self.mete_validation_data - self.mete_mean) / self.mete_std)
-        if self.modality[2] == 1:
-            validation_set.append(self.path2image(self.sky_cam_validation_data))
+            validation_set.append(self.mete_validation_data)
         validation_set.append(self.validation_hour_index)
         validation_set.append(self.target_validation_data)
 
@@ -233,11 +225,9 @@ class Reader:
         """
         test_set = []
         if self.modality[0] == 1:
-            test_set.append((self.ir_test_data - self.ir_mean) / self.ir_std)
+            test_set.append(self.ir_test_data)
         if self.modality[1] == 1:
-            test_set.append((self.mete_test_data - self.mete_mean) / self.mete_std)
-        if self.modality[2] == 1:
-            test_set.append(self.path2image(self.sky_cam_test_data))
+            test_set.append(self.mete_test_data)
         test_set.append(self.test_hour_index)
         test_set.append(self.target_test_data)
 

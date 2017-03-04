@@ -1,28 +1,39 @@
 # -*- coding: utf-8 -*-
 __author__= 'WANG Kejie<wang_kejie@foxmail.com>'
-__date__ = '12/10/2016'
+__date__ = '27/2/2016'
 
 import tensorflow as tf
 import pywt
 
 class Model:
     """
-    This is an multi-modal (three modality) neutral network model used as point/probabilistic forecast
+    This is an wavedec multi-modal neutral network model used as point/probabilistic forecast
         model digram:
-                            ---------
-        irradiance     ----|  lstm   |--------- |
-                            ---------           |
-                                                |
-                            ---------           |           ----------------            -----------
-        meteorological ----|  lstm   |--------- |----------| lstm(optional) | --------| regression |
-                            ---------           |           ----------------      |     -----------
-                                                |                                 |
-                            -----    ------     |                                 |
-        sky image      ----| CNN |--| lstm |----|                                 |
-                            -----    ------                                       |
-        hour index     -----------------------------------------------------------
+                                                   -----                    ------
+                                             -----| HPF | -----------------| LSTM |------
+                            ---------       |      -----                    ------       |
+        irradiance     ----| wavedec |------|                       -----   ------       |
+                            ---------       |      -----        ---| HPF |-| LSTM |------|-----------
+                                             -----| LPF |------|    -----   ------       |           |
+                                                   -----       |    -----   ------       |           |
+                                                                ---| LPF |-| LSTM |------|           |
+                                                                    -----   ------                   |       ------------
+                                                                                                     |------| regression |----------
+                                                   -----                    ------                   |   |   ------------
+                                             -----| HPF | -----------------| LSTM |------------------|   |
+                            ---------       |      -----                    ------       |           |   |
+        meteorological ----| wavedec |------|                       -----   ------       |           |   |
+                            ---------       |      -----        ---| HPF |-| LSTM |------|-----------    |
+                                             -----| LPF |------|    -----   ------       |               |
+                                                   -----       |    -----   ------       |               |
+                                                                ---| LPF |-| LSTM |------|               |
+                                                                    -----   ------                       |
+                                                                                                         |
+        hour index     ----------------------------------------------------------------------------------
 
-        The model focuses on the multi-modality and this model contain three modalities each of which is lstm, lstm and CNN.
+        The wavelet decomposition component is implemented in the reader and this part only contains the lstm and regression
+
+        The model focuses on the a wavelet decomposition multi-modality and this model contain three modalities each of which is lstm, lstm and CNN.
         e.g. This model used to predict solar irradiance and the first and second modalities are the irradiance and meteorological data
             and the third modality is an image dataset and use an CNN to extract the feature. And then concatenating all features into a
             feature as the input of the lstm of the second level. Then we use the output of the last cell as the regressor input to predict
@@ -50,17 +61,19 @@ class Model:
         self.hour_index = hour_index
         self.keep_prob = keep_prob
 
+        # wavedec params
+        self.level = config.level   #decomposition level
+        self.wavelet = config.wavelet   #wavelet type e.g. db1, db4, ...
+
         #the network parameters
         self.n_first_hidden = config.n_first_hidden
         self.n_second_hidden = config.n_second_hidden
-        self.n_third_hidden = config.n_third_hidden
-        self.n_hidden_level2 = config.n_hidden_level2
         self.n_target = config.n_target
 
-        #modality configuration
+        # modality configuration
         self.modality = config.modality
 
-        #regressor type {'mse', 'msvr', 'prob'}
+        #regressor type {'mse', ‘meef’, 'msvr', 'prob'}
         self.regressor = config.regressor
 
         #train params
@@ -79,15 +92,6 @@ class Model:
         self._prediction = None
         self._optimize = None
         self._loss = None
-
-
-        self.n_step_1 = config.n_step_1
-        self.n_step_2 = config.n_step_2
-        self.n_step_3 = config.n_step_3
-
-        self.input_width = config.width
-        self.input_height = config.height
-        self.cnn_feat_size = config.cnn_feat_size
 
         self.prediction
         self.optimize
@@ -119,29 +123,30 @@ class Model:
 
             if self.modality[0] == 1:
                 print "The irradiance modality is used"
-                coeffs = pywt.wavedec(data[0], wavelet=self.wavelet, level=self.level)
-                for l in range(level+1):
+                ir_coeffs = self.data[0]
+                for l in range(self.level+1):
                     with tf.variable_scope('irradiance_level_' + str(l)):
-                        cell = tf.nn.rnn_cell.LSTMCell(self.n_hidden_size, state_is_tuple=True)
-                        output, state = tf.nn.dynamic_rnn(cell, coeffs[i], dtype=tf.float32)
+                        cell = tf.nn.rnn_cell.LSTMCell(self.n_first_hidden * (l+1), state_is_tuple=True)
+                        output, state = tf.nn.dynamic_rnn(cell, ir_coeffs[l], dtype=tf.float32)
                         outputs.append(self._get_last_out(output))
-                        outputs_size += self.n_hidden_size
+                        outputs_size += self.n_first_hidden * (l+1)
 
             if self.modality[1] == 1:
-                coeffs = pywt.wavedec(data[1], wavelet=self.wavelet, level=self.level)
-                for l in range(level+1):
+                print "The meteorological modality is used"
+                mete_coeffs = self.data[1]
+                for l in range(self.level+1):
                     with tf.variable_scope('meteorological_level_' + str(l)):
-                        cell = tf.nn.rnn_cell.LSTMCell(self.n_hidden_size, state_is_tuple=True)
-                        output, state = tf.nn.dynamic_rnn(cell, coeffs[i], dtype=tf.float32)
+                        cell = tf.nn.rnn_cell.LSTMCell(self.n_second_hidden, state_is_tuple=True)
+                        output, state = tf.nn.dynamic_rnn(cell, mete_coeffs[l], dtype=tf.float32)
                         outputs.append(self._get_last_out(output))
-                        outputs_size += self.n_hidden_size
+                        outputs_size += self.n_second_hidden
 
             # concat features into a feature
             output = tf.concat(1, outputs)
 
             # regression
             with tf.variable_scope("regression"):
-                weight = tf.Variable(tf.truncated_normal(shape=[outputs_size, self.n_target], stddev=3.0), dtype=tf.float32)
+                weight = tf.Variable(tf.truncated_normal(shape=[outputs_size, self.n_target], stddev=2.0), dtype=tf.float32)
                 bias = tf.Variable(tf.constant(0.0, shape=[self.n_target]), dtype=tf.float32)
                 self._prediction = tf.matmul(output, weight) + bias
 
