@@ -15,26 +15,22 @@ HOUR_IN_A_DAY = 24
 
 data_path = "pad_data_path.csv"
 
-if len(sys.argv) != 4:
-	print "Error: please input the train and validation set prop, e.g. python generate.py 0.9 0.05"
+validation_day_num = 365
+test_day_num = 366
+
+if len(sys.argv) != 2:
+	print "Error: please input the train and validation set prop, e.g. python generate.py 200011201205"
 	exit(0)
 
 data_dir = sys.argv[1] + "/"
-train_prop = float(sys.argv[2])
-validation_prop = float(sys.argv[3])
-
-if train_prop + validation_prop >= 1:
-	print "Error: the sum of train and validation proportion can NOT larger than 1"
-	exit(0)
 
 #load the data
 sky_cam_data = np.loadtxt(data_dir + "pad_data_path.csv", delimiter=',')
 
 data_hour_length = len(sky_cam_data)
-data_day_length = data_hour_length / HOUR_IN_A_DAY
-train_length = int(data_day_length * train_prop) * HOUR_IN_A_DAY
-validation_length = int(data_day_length * validation_prop) * HOUR_IN_A_DAY
-test_length = data_hour_length - train_length - validation_length
+validation_length = validation_day_num * HOUR_IN_A_DAY
+test_length = test_day_num * HOUR_IN_A_DAY
+train_length = data_hour_length - validation_length - test_length
 
 sky_cam_train_data = sky_cam_data[0:train_length]
 sky_cam_validation_data = sky_cam_data[train_length:train_length+validation_length]
