@@ -233,7 +233,7 @@ class Model:
 
             # regression
             with tf.variable_scope("regression"):
-                weight = tf.Variable(tf.truncated_normal(shape=[output_first_level_size, self.n_target], stddev=3.0), dtype=tf.float32)
+                weight = tf.Variable(tf.truncated_normal(shape=[output_first_level_size, self.n_target], stddev=2.0), dtype=tf.float32)
                 bias = tf.Variable(tf.constant(0.0, shape=[self.n_target]), dtype=tf.float32)
                 self._prediction = tf.matmul(output, weight) + bias
 
@@ -265,13 +265,13 @@ class Model:
                 coeff = tf.cast(diff>0, tf.float32) - self.quantile_rate
                 self._loss = tf.reduce_sum(tf.mul(diff, coeff)) + (self.w_sum + self.b_sum) * self.C
             elif self.regressor == "meef":
-                theta = 20
+                theta = 40
+                gamma = 0.1
                 diff = self.prediction - self.target
                 ones_like_vec = tf.ones_like(diff)
                 diff_expand = tf.matmul(diff, tf.transpose(ones_like_vec))
-                # self._loss = tf.reduce_mean(tf.exp(-0.5 * tf.square((diff_expand - tf.transpose(diff_expand)) / theta)))
-                self._loss =  - tf.reduce_mean(self._Gaussian_Kernel(diff_expand - tf.transpose(diff_expand), 2 * theta)) - \
-                            tf.reduce_mean(self._Gaussian_Kernel(diff, theta))
+                self._loss =  - (1.0 - gamma) * tf.reduce_mean(self._Gaussian_Kernel(diff_expand - tf.transpose(diff_expand), 2 * theta)) - \
+                            gamma * tf.reduce_mean(self._Gaussian_Kernel(diff, theta))
 
         return self._loss
 
