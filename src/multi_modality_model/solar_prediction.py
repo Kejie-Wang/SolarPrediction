@@ -9,7 +9,6 @@ import numpy as np
 from config import Model_Config
 from reader import Reader
 from model import Model
-from util import MSE_And_MAE
 import time
 
 model_path = '../../saved_model_1/'
@@ -190,10 +189,10 @@ def main(_):
         test_feed = fill_feed_dict(x_ir, x_mete, x_sky_cam, hour_index, y_, keep_prob, test_set, 1.0, modality)
 
         # save the target data, hour_index and missing index
-        np.savetxt(saved_output_folder_path + file_name + ".target", test_set[-1], fmt="%.4f", delimiter=',')
-        np.savetxt(saved_output_folder_path + file_name + "_hour_index.csv", test_set[-2], fmt="%d", delimiter=',')
+        np.savetxt(saved_output_folder_path + "target.csv", test_set[-1], fmt="%.4f", delimiter=',')
+        np.savetxt(saved_output_folder_path + "hour_index.csv", test_set[-2], fmt="%d", delimiter=',')
         test_missing_index = reader.test_missing_index
-        np.savetxt(saved_output_folder_path + file_name + "_missing_index.csv", test_missing_index, fmt="%d", delimiter=',')
+        np.savetxt(saved_output_folder_path + "missing_index.csv", test_missing_index, fmt="%d", delimiter=',')
 
         for i in range(epoch_size):
             # do test
@@ -258,7 +257,7 @@ def main(_):
                     if validation_rmse < validation_min:
                         validation_min = validation_rmse
                         best_test_result = do_eval(sess, model.prediction, test_feed)
-                        np.savetxt(saved_output_folder_path + file_name + ".res", best_test_result, fmt="%.4f", delimiter=',')
+                        np.savetxt(saved_output_folder_path + "result.csv", best_test_result, fmt="%.4f", delimiter=',')
                         if i>1500:
                             save_path = saver.save(sess, saved_model_folder_path + "model.ckpt")
                             print '\033[1;34;40m', "save the model", '\033[0m'
@@ -267,7 +266,7 @@ def main(_):
                     if abs(validation_coverage_rate - config.quantile_rate) < validation_min:
                         validation_min = abs(validation_coverage_rate - config.quantile_rate)
                         best_test_result = do_eval(sess, model.prediction, test_feed)
-                        np.savetxt(saved_output_folder_path + file_name + ".res", best_test_result, fmt="%.4f", delimiter=',')
+                        np.savetxt(saved_output_folder_path + "result.csv", best_test_result, fmt="%.4f", delimiter=',')
 
                         if i>500:
                             save_path = saver.save(sess, saved_model_folder_path + "model.ckpt")
