@@ -193,53 +193,68 @@ class Reader:
 
         return batch
 
-    def get_train_set(self):
+    def get_train_set(self, start=None, length=None):
         """
         @brief return the total dataset
         """
+        if start is None:
+            start = 0
+        if length is None or start + length > self.train_num:
+            length = self.train_num - start
+
         train_set = []
         if self.modality[0] == 1:
-            train_set.append((self.ir_train_data - self.ir_mean) / self.ir_std)
+            train_set.append((self.ir_train_data[start:start+length] - self.ir_mean) / self.ir_std)
         if self.modality[1] == 1:
-            train_set.append((self.mete_train_data - self.mete_mean) / self.mete_std)
+            train_set.append((self.mete_train_data[start:start+length] - self.mete_mean) / self.mete_std)
         if self.modality[2] == 1:
-            train_set.append(self.path2image(self.sky_cam_train_data))
-        train_set.append(self.train_hour_index)
-        train_set.append(self.target_train_data)
+            train_set.append(self.path2image(self.sky_cam_train_data[start:start+length]))
+        train_set.append(self.train_hour_index[start:start+length])
+        train_set.append(self.target_train_data[start:start+length])
 
         return train_set
 
     #The returned validataion and test set:
     #ir_data and mete_data: [batch_size, n_step, n_input], batch_size = validation_num/test_num
     #target_data: [batch_size, n_model], each of the target_data contains all model target in a tesor
-    def get_validation_set(self):
+    def get_validation_set(self, start=None, length=None):
         """
         @brief return the total validation dataset
         """
+        if start is None:
+            start = 0
+        if length is None or start + length > self.validation_num:
+            length = self.validation_num - start
+
         validation_set = []
         if self.modality[0] == 1:
-            validation_set.append((self.ir_validation_data - self.ir_mean) / self.ir_std)
+            validation_set.append((self.ir_validation_data[start:start+length] - self.ir_mean) / self.ir_std)
         if self.modality[1] == 1:
-            validation_set.append((self.mete_validation_data - self.mete_mean) / self.mete_std)
+            validation_set.append((self.mete_validation_data[start:start+length] - self.mete_mean) / self.mete_std)
         if self.modality[2] == 1:
-            validation_set.append(self.path2image(self.sky_cam_validation_data))
-        validation_set.append(self.validation_hour_index)
-        validation_set.append(self.target_validation_data)
+            validation_set.append(self.path2image(self.sky_cam_validation_data[start:start+length]))
+        validation_set.append(self.validation_hour_index[start:start+length])
+        validation_set.append(self.target_validation_data[start:start+length])
 
         return validation_set
 
-    def get_test_set(self):
+    def get_test_set(self, start=None, length=None):
         """
         @brief return a test set in the specific test num
         """
+        if start is None:
+            start = 0
+        if length is None or start + length > self.test_num:
+            length = self.test_num - start
+
         test_set = []
         if self.modality[0] == 1:
-            test_set.append((self.ir_test_data - self.ir_mean) / self.ir_std)
+            test_set.append((self.ir_test_data[start:start+length] - self.ir_mean) / self.ir_std)
         if self.modality[1] == 1:
-            test_set.append((self.mete_test_data - self.mete_mean) / self.mete_std)
+            test_set.append((self.mete_test_data[start:start+length] - self.mete_mean) / self.mete_std)
         if self.modality[2] == 1:
-            test_set.append(self.path2image(self.sky_cam_test_data))
-        test_set.append(self.test_hour_index)
-        test_set.append(self.target_test_data)
+            test_set.append(self.path2image(self.sky_cam_test_data[start:start+length]))
+        test_set.append(self.test_hour_index[start:start+length])
+        test_set.append(self.target_test_data[start:start+length])
 
         return test_set
