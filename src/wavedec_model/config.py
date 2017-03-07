@@ -15,7 +15,7 @@ class Model_Config:
     quantile_rate = 0.3
 
     # wavelet decomposition params
-    level = 3
+    level = 1
     wavelet = 'db4'
 
     # network params
@@ -29,7 +29,7 @@ class Model_Config:
     lr = 0.0005
 
     #modal configuration
-    modality = [1, 0]
+    modality = [0, 1]
 
     # data reader configuration
     # data_step: the lag between the two input series
@@ -39,14 +39,17 @@ class Model_Config:
     batch_size = 500
     data_step = 1
 
-    n_step_1 = 72
+    n_step_1 = 24
     n_step_2 = 72
 
-    n_shift_1 = 72
+    n_shift_1 = 24
     n_shift_2 = 72
 
     h_ahead = 0
     n_target = 1
+
+    # similar period length configuration
+    sim_day_fea_length = 7
 
     #train and test params
     epoch_size = 10000

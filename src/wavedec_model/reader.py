@@ -9,21 +9,26 @@ from target_reader import Target_Reader
 import cv2
 import pywt
 
-MINUTES_TO_AVG = 15
+MINUTES_TO_AVG = 60
 HOUR_IN_A_DAY = 24
 
-ir_train_data_path = "../../dataset/NREL_SSRL_BMS_IRANDMETE/wavedec_input_data/train/ir_train_data.csv"
-mete_train_data_path = "../../dataset/NREL_SSRL_BMS_IRANDMETE/wavedec_input_data/train/mete_train_data.csv"
-target_train_data_path = "../../dataset/NREL_SSRL_BMS_IRANDMETE/wavedec_input_data/train/target_train_hourly_data.csv"
+ir_train_data_path = "../../dataset/NREL_SSRL_BMS_IRANDMETE/input_data/train/ir_train_data.csv"
+mete_train_data_path = "../../dataset/NREL_SSRL_BMS_IRANDMETE/input_data/train/mete_train_data.csv"
+target_train_data_path = "../../dataset/NREL_SSRL_BMS_IRANDMETE/input_data/train/target_train_data.csv"
 
-ir_validation_data_path = "../../dataset/NREL_SSRL_BMS_IRANDMETE/wavedec_input_data/validation/ir_validation_data.csv"
-mete_validation_data_path = "../../dataset/NREL_SSRL_BMS_IRANDMETE/wavedec_input_data/validation/mete_validation_data.csv"
-target_validation_data_path = "../../dataset/NREL_SSRL_BMS_IRANDMETE/wavedec_input_data/validation/target_validation_hourly_data.csv"
+ir_validation_data_path = "../../dataset/NREL_SSRL_BMS_IRANDMETE/input_data/validation/ir_validation_data.csv"
+mete_validation_data_path = "../../dataset/NREL_SSRL_BMS_IRANDMETE/input_data/validation/mete_validation_data.csv"
+target_validation_data_path = "../../dataset/NREL_SSRL_BMS_IRANDMETE/input_data/validation/target_validation_data.csv"
 
-ir_test_data_path = "../../dataset/NREL_SSRL_BMS_IRANDMETE/wavedec_input_data/test/ir_test_data.csv"
-mete_test_data_path = "../../dataset/NREL_SSRL_BMS_IRANDMETE/wavedec_input_data/test/mete_test_data.csv"
-target_test_data_path = "../../dataset/NREL_SSRL_BMS_IRANDMETE/wavedec_input_data/test/target_test_hourly_data.csv"
+ir_test_data_path = "../../dataset/NREL_SSRL_BMS_IRANDMETE/input_data/test/ir_test_data.csv"
+mete_test_data_path = "../../dataset/NREL_SSRL_BMS_IRANDMETE/input_data/test/mete_test_data.csv"
+target_test_data_path = "../../dataset/NREL_SSRL_BMS_IRANDMETE/input_data/test/target_test_data.csv"
 
+sim_day_fea_train_data_path = "../../dataset/NREL_SSRL_BMS_IRANDMETE/input_data/train/sim_day_fea_train_data.csv"
+sim_day_fea_validation_data_path = "../../dataset/NREL_SSRL_BMS_IRANDMETE/input_data/validation/sim_day_fea_validation_data.csv"
+sim_day_fea_test_data_path = "../../dataset/NREL_SSRL_BMS_IRANDMETE/input_data/test/sim_day_fea_test_data.csv"
+
+hour_index_range = [5, 18]
 
 class Reader:
 
@@ -33,7 +38,7 @@ class Reader:
         hour_index = np.arange(start_hour_index, max(data_index)*data_step+start_hour_index+1, data_step)
         hour_index = hour_index[data_index] % HOUR_IN_A_DAY
         # filter the data
-        index = np.logical_and(hour_index>=5, hour_index<=18)
+        index = np.logical_and(hour_index>=hour_index_range[0], hour_index<=hour_index_range[1])
 
         return data_index[index], np.reshape(hour_index[index], [-1, 1])
 
@@ -50,6 +55,46 @@ class Reader:
             coeffs[i] = np.transpose(coeffs[i], [0, 2, 1])
         return coeffs
 
+    def _DTW_distance(self, s1, s2, window_size):
+        #print '=== DTW distance ==='
+        window_size = max(window_size, abs(len(s1)-len(s2)))
+        Gamma={}
+        for i in range(-1,len(s1)):
+            for j in range(-1,len(s2)):
+                Gamma[(i, j)] = float('inf')
+        Gamma[(-1, -1)] = 0
+        for i in range(len(s1)):
+            for j in range(max(0, i-window_size), min(len(s2), i+window_size+1)):
+                dist= (s1[i]-s2[j])**2
+                Gamma[(i, j)] = dist + min(Gamma[(i-1, j)],Gamma[(i, j-1)], Gamma[(i-1, j-1)])
+        return (Gamma[len(s1)-1, len(s2)-1]) ** 0.5
+
+    def _get_sim_day_ir(self, hist_feature, hist_ir, hist_hour_index, input_feature, input_hour_index):
+        '''
+        hist_feature: [hist_period_num, feature_size]
+        hist_ir: [hist_period_num, ir_feature_num]
+        hist_hour_index: [hist_period_num]
+        input_feature: [input_period_num, feature_size]
+        input_hour_index: [input_period_num]
+        '''
+        hist_period_num = hist_feature.shape[0]
+        input_period_num = input_feature.shape[0]
+        print hist_period_num, input_period_num
+
+        dist = np.zeros(shape=[input_period_num, hist_period_num])
+        dist[dist==0] = np.inf
+        for i in range(input_period_num):
+            for j in range(hist_period_num):
+                if input_hour_index[i] == hist_hour_index[j]:
+                    print i, j
+                    dist[i][j] = self._DTW_distance(input_feature[i], hist_feature[j], 2)
+            if i%1000==0:
+                print i
+
+        similar_index = np.argsort(dist, axis=1)[:,1]
+
+        return hist_ir[similar_index]
+    
     def __init__(self, config):
         """
         The constructor of the class Reader
@@ -68,6 +113,8 @@ class Reader:
         wavelet = config.wavelet
         level = config.level
 
+        sim_day_fea_length = config.sim_day_fea_length
+
         shift = []
         if self.modality[0] == 1:
             shift.append(config.n_shift_1)
@@ -78,7 +125,9 @@ class Reader:
         MINUTE_TO_AVG_IN_HOUR = 60 // MINUTES_TO_AVG
 
         train_index = []; validation_index = []; test_index = []
-        #read first modality data
+
+        # construct the reader
+        # construct the first modality reader
         if self.modality[0] == 1:
             shift_day_1 = (max_shift - config.n_shift_1) // data_step; assert (max_shift - config.n_shift_1)%data_step == 0
             ir_feature_reader = Feature_Reader(ir_train_data_path, ir_validation_data_path, ir_test_data_path, \
@@ -86,7 +135,7 @@ class Reader:
             ir_train_index, ir_validation_index, ir_test_index = ir_feature_reader.get_index()
             train_index.append(ir_train_index); validation_index.append(ir_validation_index); test_index.append(ir_test_index)
 
-        #read second modality data
+        # construct the second modality reader
         if self.modality[1] == 1:
             shift_day_2 = (max_shift - config.n_shift_2) // data_step; assert (max_shift - config.n_shift_2)%data_step == 0
             mete_feature_reader = Feature_Reader(mete_train_data_path, mete_validation_data_path, mete_test_data_path, \
@@ -94,12 +143,28 @@ class Reader:
             mete_train_index, mete_validation_index, mete_test_index = mete_feature_reader.get_index()
             train_index.append(mete_train_index); validation_index.append(mete_validation_index); test_index.append(mete_test_index)
 
-        # read target data
+        # construct the target reader
         target_reader = Target_Reader(target_train_data_path, target_validation_data_path, target_test_data_path, max_shift, h_ahead, data_step, n_target)
         target_train_index, target_validation_index, target_test_index = target_reader.get_index()
         train_index.append(target_train_index); validation_index.append(target_validation_index); test_index.append(target_test_index)
 
-        # get the valid index
+        # construct the similar day feature reader
+        sim_day_fea_reader = Target_Reader(sim_day_fea_train_data_path, sim_day_fea_validation_data_path, sim_day_fea_test_data_path, \
+                                        max_shift, h_ahead - sim_day_fea_length//2, data_step, sim_day_fea_length)
+        sim_day_fea_train_index, sim_day_fea_validation_index, sim_day_fea_test_index = sim_day_fea_reader.get_index()
+        train_index.append(sim_day_fea_train_index); validation_index.append(sim_day_fea_validation_index); test_index.append(sim_day_fea_test_index)
+
+        print "\ntrain index"
+        for i in train_index:
+            print len(i),
+        print "\nvalidation index"
+        for i in validation_index:
+            print len(i)
+        print "\ntest index"
+        for i in test_index:
+            print len(i)
+
+        # reduce the multiple modality valid index
         train_index = reduce(np.intersect1d, train_index)
         validation_index = reduce(np.intersect1d, validation_index)
         test_index= reduce(np.intersect1d, test_index)
@@ -111,6 +176,7 @@ class Reader:
         validation_index, self.validation_hour_index = self._get_hour_index_and_filter_data(max_shift, h_ahead, data_step, validation_index)
         test_index, self.test_hour_index = self._get_hour_index_and_filter_data(max_shift, h_ahead, data_step, test_index)
 
+        # read the first modality data
         if self.modality[0] == 1:
             ir_train_data, ir_validation_data, ir_test_data = ir_feature_reader.get_data(train_index, validation_index, test_index)
             ir_mean, ir_std = ir_feature_reader.get_mean_std()
@@ -120,8 +186,8 @@ class Reader:
             n_step_level = []
             for d in self.ir_test_data:
                 n_step_level.append(d.shape[1])
-                print d.shape
-            print "ir modality", n_step_level
+
+        # read the second modality data
         if self.modality[1] == 1:
             mete_train_data, mete_validation_data, mete_test_data = mete_feature_reader.get_data(train_index, validation_index, test_index)
             mete_mean, mete_std = mete_feature_reader.get_mean_std()
@@ -131,11 +197,44 @@ class Reader:
             n_step_level = []
             for d in self.mete_test_data:
                 n_step_level.append(d.shape[1])
-                print d.shape
-            print "mete modality", n_step_level
 
+        # the n_step for each wavedec level
         self.n_step_level = n_step_level
+
+        # read the target data
         self.target_train_data, self.target_validation_data, self.target_test_data = target_reader.get_data(train_index, validation_index, test_index)
+        # read the similar day feature data
+        sim_day_fea_train_data, sim_day_fea_validation_data, sim_day_fea_test_data = sim_day_fea_reader.get_data(train_index, validation_index, test_index)
+
+        # read the similar day historical feature and irradiance data
+        # use the train feature data as the historical data and thus there need not to constuct a new feature reader to get historical data
+        # construct historical irradiance reader
+        # the validation and test data is useless, it just for adapting the function
+        sim_day_ir_reader = Target_Reader(target_train_data_path, target_validation_data_path, target_test_data_path, \
+                                        max_shift, h_ahead - sim_day_fea_length//2, data_step, sim_day_fea_length)
+        sim_day_ir_train_index, sim_day_ir_validation_index, sim_day_ir_test_index = sim_day_ir_reader.get_index()
+
+        sim_day_train_index = reduce(np.intersect1d, [sim_day_fea_train_index, sim_day_ir_train_index])
+        sim_day_validation_index = reduce(np.intersect1d, [sim_day_fea_validation_index, sim_day_ir_validation_index])
+        sim_day_test_index = reduce(np.intersect1d, [sim_day_fea_test_index, sim_day_ir_test_index])
+
+        sim_day_train_index, sim_day_hour_index = self._get_hour_index_and_filter_data(max_shift, h_ahead, data_step, sim_day_train_index)
+
+        sim_day_ir_data = sim_day_ir_reader.get_data(sim_day_train_index, sim_day_validation_index, sim_day_test_index)[0]
+        sim_day_fea_data = sim_day_fea_reader.get_data(sim_day_train_index, sim_day_validation_index, sim_day_test_index)[0]
+
+        # self.sim_day_ir_train_data = self._get_sim_day_ir(sim_day_fea_data, sim_day_ir_data, sim_day_hour_index, sim_day_fea_train_data, self.train_hour_index)
+        # self.sim_day_ir_validation_data = self._get_sim_day_ir(sim_day_fea_data, sim_day_ir_data, sim_day_hour_index, sim_day_fea_validation_data, self.validation_hour_index)
+        # self.sim_day_ir_test_data = self._get_sim_day_ir(sim_day_fea_data, sim_day_ir_data, sim_day_hour_index, sim_day_fea_test_data, self.test_hour_index)
+
+        # for test
+        self.sim_day_ir_data = sim_day_ir_data
+        self.sim_day_fea_data = sim_day_fea_data
+        self.sim_day_hour_index = sim_day_hour_index
+
+        self.sim_day_fea_train_data = sim_day_fea_train_data
+        self.sim_day_fea_validation_data = sim_day_fea_validation_data
+        self.sim_day_fea_test_data = sim_day_fea_test_data
 
         self.test_missing_index = target_reader.get_test_missing_index(test_index)
 

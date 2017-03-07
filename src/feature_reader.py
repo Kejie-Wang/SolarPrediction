@@ -49,12 +49,12 @@ class Feature_Reader:
         self.test_index = self._get_valid_index(self.test_data)
 
     def get_data(self, train_index, validation_index, test_index):
-        self.train_data = self.train_data[train_index]
-        self.validation_data = self.validation_data[validation_index]
-        self.test_data = self.test_data[test_index]
+        train_data = self.train_data[train_index]
+        validation_data = self.validation_data[validation_index]
+        test_data = self.test_data[test_index]
 
         #feature scale
-        data = np.concatenate((self.train_data, self.validation_data, self.test_data), axis=0)
+        data = np.concatenate((train_data, validation_data, test_data), axis=0)
         mean = np.mean(data, axis=0)
         std = np.std(data, axis=0)
         std[std==0] = 1.0
@@ -62,7 +62,7 @@ class Feature_Reader:
         self.mean = mean
         self.std = std
 
-        return self.train_data, self.validation_data, self.test_data
+        return train_data, validation_data, test_data
 
     def get_mean_std(self):
         return self.mean, self.std
