@@ -14,16 +14,19 @@ ir_train_data_path = "../../dataset/NREL_SSRL_BMS_IRANDMETE/input_data/train/ir_
 mete_train_data_path = "../../dataset/NREL_SSRL_BMS_IRANDMETE/input_data/train/mete_train_data.csv"
 sky_cam_train_data_path = "../../dataset/NREL_SSRL_BMS_SKY_CAM/input_data/train/sky_cam_train_data.csv"
 target_train_data_path = "../../dataset/NREL_SSRL_BMS_IRANDMETE/input_data/train/target_train_data.csv"
+time_train_data_path = "../../dataset/NREL_SSRL_BMS_IRANDMETE/input_data/train/time_train_data.csv"
 
 ir_validation_data_path = "../../dataset/NREL_SSRL_BMS_IRANDMETE/input_data/validation/ir_validation_data.csv"
 mete_validation_data_path = "../../dataset/NREL_SSRL_BMS_IRANDMETE/input_data/validation/mete_validation_data.csv"
 sky_cam_validation_data_path = "../../dataset/NREL_SSRL_BMS_SKY_CAM/input_data/validation/sky_cam_validation_data.csv"
 target_validation_data_path = "../../dataset/NREL_SSRL_BMS_IRANDMETE/input_data/validation/target_validation_data.csv"
+time_validation_data_path = "../../dataset/NREL_SSRL_BMS_IRANDMETE/input_data/validation/time_validation_data.csv"
 
 ir_test_data_path = "../../dataset/NREL_SSRL_BMS_IRANDMETE/input_data/test/ir_test_data.csv"
 mete_test_data_path = "../../dataset/NREL_SSRL_BMS_IRANDMETE/input_data/test/mete_test_data.csv"
 sky_cam_test_data_path = "../../dataset/NREL_SSRL_BMS_SKY_CAM/input_data/test/sky_cam_test_data.csv"
 target_test_data_path = "../../dataset/NREL_SSRL_BMS_IRANDMETE/input_data/test/target_test_data.csv"
+time_test_data_path = "../../dataset/NREL_SSRL_BMS_IRANDMETE/input_data/test/time_test_data.csv"
 
 sky_cam_image_data_path = '../../dataset/NREL_SSRL_BMS_SKY_CAM/input_data/all_image_gray_64.npy'
 sky_cam_exist_image_list_path = '../../dataset/NREL_SSRL_BMS_SKY_CAM/input_data/sky_cam_image_name.csv'
@@ -102,6 +105,9 @@ class Reader:
         target_train_index, target_validation_index, target_test_index = target_reader.get_index()
         train_index.append(target_train_index); validation_index.append(target_validation_index); test_index.append(target_test_index)
 
+        # read the target time index
+        time_reader = Target_Reader(time_train_data_path, time_validation_data_path, time_test_data_path, max_shift, h_ahead, data_step, n_target, np.int)
+
         # get the valid index
         train_index = reduce(np.intersect1d, train_index)
         validation_index = reduce(np.intersect1d, validation_index)
@@ -124,8 +130,11 @@ class Reader:
             self.sky_cam_train_data, self.sky_cam_validation_data, self.sky_cam_test_data = sky_cam_feature_reader.get_data(train_index, validation_index, test_index)
 
         self.target_train_data, self.target_validation_data, self.target_test_data = target_reader.get_data(train_index, validation_index, test_index)
+        self.time_train_data, self.time_validation_data, self.time_test_data = time_reader.get_data(train_index, validation_index, test_index)
 
-        self.test_missing_index = target_reader.get_test_missing_index(test_index)
+        self.time_train_data = self.time_train_data[:,0,:]
+        self.time_validation_data = self.time_validation_data[:,0,:]
+        self.time_test_data = self.time_test_data[:,0,:]
 
         #CAUTIOUS: the length of the ir_train_data and target_train_data may be differnet
         #the length of mete_test_data may be more short
