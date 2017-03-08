@@ -18,7 +18,7 @@ class Target_Reader:
         return np.array(shape_targets)
 
     def _read_target_data(self, data_path, max_shift, h_ahead, data_step, n_target):
-        raw_data = np.loadtxt(data_path, delimiter=',')
+        raw_data = np.loadtxt(data_path, delimiter=',', dtype=self.dtype)
         return self._target_reshape(raw_data, max_shift, h_ahead, data_step, n_target)
 
     def _read_dataset_target(self, train_path, validation_path, test_path, max_shift, h_ahead, data_step, n_target):
@@ -40,7 +40,8 @@ class Target_Reader:
 
         return np.setdiff1d(np.arange(num), np.array(missing_index))
 
-    def __init__(self, train_path, validation_path, test_path, max_shift, h_ahead, data_step, n_target):
+    def __init__(self, train_path, validation_path, test_path, max_shift, h_ahead, data_step, n_target, dtype=np.float32):
+        self.dtype = dtype
         self.train_data, self.validation_data, self.test_data = self._read_dataset_target(train_path, validation_path, test_path, max_shift, h_ahead, data_step, n_target)
 
         #get the valid data index
@@ -57,7 +58,3 @@ class Target_Reader:
 
     def get_index(self):
         return self.train_index, self.validation_index, self.test_index
-
-    def get_test_missing_index(self, test_index):
-        num = len(self.test_data)
-        return np.setdiff1d(np.arange(num), test_index)
