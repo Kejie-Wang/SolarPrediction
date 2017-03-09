@@ -11,8 +11,8 @@ from reader import Reader
 from model import Model
 import time
 
-model_path = '../../saved_model_1/'
-output_path = '../../output_model_1/'
+model_path = '../../saved_model_less_fea/'
+output_path = '../../output_model_less_fea/'
 
 def fill_feed_dict(x_ir_placeholder, \
                 x_mete_placeholder, \
@@ -162,6 +162,21 @@ def main(_):
     print "save the file with", file_name
     print '\033[0m'
 
+    # get the train, validation and test set
+    train_set = reader.get_train_set()
+    validation_set = reader.get_validation_set()
+    test_set = reader.get_test_set()
+
+    # fill the train, validation and test feed dict
+    # train_feed = fill_feed_dict(x_ir, x_mete, x_sky_cam, hour_index, y_, keep_prob, train_set, 1.0, modality)
+    validation_feed = fill_feed_dict(x_ir, x_mete, x_sky_cam, hour_index, y_, keep_prob, validation_set, 1.0, modality)
+    test_feed = fill_feed_dict(x_ir, x_mete, x_sky_cam, hour_index, y_, keep_prob, test_set, 1.0, modality)
+
+    # save the target data, hour_index and missing index
+    np.savetxt(saved_output_folder_path + "target.csv", test_set[-1], fmt="%.4f", delimiter=',')
+    np.savetxt(saved_output_folder_path + "hour_index.csv", test_set[-2], fmt="%d", delimiter=',')
+    np.savetxt(saved_output_folder_path + "time.csv", reader.time_test_data, fmt="%d", delimiter=',')
+
     validation_min = float('inf')
     best_test_result = None
     lr = config.lr
@@ -178,21 +193,7 @@ def main(_):
             save_path = saver.restore(sess, path)
             print '\033[1;34;40m', "restore model", '\033[0m'
 
-        # get the train, validation and test set
-        train_set = reader.get_train_set()
-        validation_set = reader.get_validation_set()
-        test_set = reader.get_test_set()
 
-        # fill the train, validation and test feed dict
-        # train_feed = fill_feed_dict(x_ir, x_mete, x_sky_cam, hour_index, y_, keep_prob, train_set, 1.0, modality)
-        validation_feed = fill_feed_dict(x_ir, x_mete, x_sky_cam, hour_index, y_, keep_prob, validation_set, 1.0, modality)
-        test_feed = fill_feed_dict(x_ir, x_mete, x_sky_cam, hour_index, y_, keep_prob, test_set, 1.0, modality)
-
-        # save the target data, hour_index and missing index
-        np.savetxt(saved_output_folder_path + "target.csv", test_set[-1], fmt="%.4f", delimiter=',')
-        np.savetxt(saved_output_folder_path + "hour_index.csv", test_set[-2], fmt="%d", delimiter=',')
-        test_missing_index = reader.test_missing_index
-        np.savetxt(saved_output_folder_path + "missing_index.csv", test_missing_index, fmt="%d", delimiter=',')
 
         for i in range(epoch_size):
             # do test
