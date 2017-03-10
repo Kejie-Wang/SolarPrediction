@@ -29,6 +29,10 @@ class Model:
                                                                 ---| LPF |-| LSTM |------|               |
                                                                     -----   ------                       |
                                                                                                          |
+                                                                            ------                       |
+        similar_day_feature -----------------------------------------------| LSTM |----------------------|
+                                                                            ------                       |
+                                                                                                         |
         hour index     ----------------------------------------------------------------------------------
 
         The wavelet decomposition component is implemented in the reader and this part only contains the lstm and regression
@@ -68,6 +72,7 @@ class Model:
         #the network parameters
         self.n_first_hidden = config.n_first_hidden
         self.n_second_hidden = config.n_second_hidden
+        self.n_third_hidden = config.n_third_hidden
         self.n_target = config.n_target
 
         # modality configuration
@@ -121,6 +126,7 @@ class Model:
             outputs = []
             outputs_size = 0
 
+            # irradiance modality
             if self.modality[0] == 1:
                 print "The irradiance modality is used"
                 ir_coeffs = self.data[0]
@@ -131,6 +137,7 @@ class Model:
                         outputs.append(self._get_last_out(output))
                         outputs_size += self.n_first_hidden * (l+1)
 
+            # meteorological modality
             if self.modality[1] == 1:
                 print "The meteorological modality is used"
                 mete_coeffs = self.data[1]
@@ -140,6 +147,15 @@ class Model:
                         output, state = tf.nn.dynamic_rnn(cell, mete_coeffs[l], dtype=tf.float32)
                         outputs.append(self._get_last_out(output))
                         outputs_size += self.n_second_hidden
+
+            # similar day modality
+            if self.modality[2] == 1:
+                print "The similar day modality is used"
+                with tf.variable_scope('smiliar_day_modality'):
+                    cell = tf.nn.rnn_cell.LSTMCell(self.n_third_hidden, state_is_tuple=True)
+                    output, state = tf.nn.dynamic_rnn(cell, self.data[2], dtype=tf.float32)
+                    outputs.append(self._get_last_out(output))
+                    outputs_size += self.n_third_hidden
 
             # concat features into a feature
             output = tf.concat(1, outputs)
@@ -177,7 +193,7 @@ class Model:
                 diff = self.prediction - self.target
                 coeff = tf.cast(diff>0, tf.float32) - self.quantile_rate
                 self._loss = tf.reduce_sum(tf.mul(diff, coeff)) + (self.w_sum + self.b_sum) * self.C
-            elif self.regressor == "mcc":
+            elif self.regressor == "meef":
                 theta = 20
                 diff = self.prediction - self.target
                 ones_like_vec = tf.ones_like(diff)
