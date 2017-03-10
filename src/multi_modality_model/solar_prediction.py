@@ -11,8 +11,8 @@ from reader import Reader
 from model import Model
 import time
 
-model_path = '../../saved_model_less_fea/'
-output_path = '../../output_model_less_fea/'
+model_path = '../../saved_multi_modal_model_with_less_fea/'
+output_path = '../../output_multi_modal_model_with_less_fea/'
 
 def fill_feed_dict(x_ir_placeholder, \
                 x_mete_placeholder, \
