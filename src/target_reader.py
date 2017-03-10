@@ -50,11 +50,11 @@ class Target_Reader:
         self.test_index = self._get_valid_index(self.test_data)
 
     def get_data(self, train_index, validation_index, test_index):
-        self.train_data = self.train_data[train_index]
-        self.validation_data = self.validation_data[validation_index]
-        self.test_data = self.test_data[test_index]
+        train_data = self.train_data[train_index]
+        validation_data = self.validation_data[validation_index]
+        test_data = self.test_data[test_index]
 
-        return self.train_data, self.validation_data, self.test_data
+        return train_data, validation_data, test_data
 
     def get_index(self):
         return self.train_index, self.validation_index, self.test_index
