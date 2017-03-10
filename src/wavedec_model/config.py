@@ -9,7 +9,7 @@ class Model_Config:
 
     # msvr params
     epsilon = 10
-    C  = 3
+    C  = 0.0
 
     # quantile regression params
     quantile_rate = 0.3
@@ -22,6 +22,7 @@ class Model_Config:
     # the hidden size for three modalities, second level lstm and fully connected network
     n_first_hidden = 100
     n_second_hidden = 200
+    n_third_hidden = 100
     cnn_feat_size = 200
     n_hidden_level2 = 400
 
@@ -29,7 +30,7 @@ class Model_Config:
     lr = 0.0005
 
     #modal configuration
-    modality = [1, 0]
+    modality = [1, 0, 1]
 
     # data reader configuration
     # data_step: the lag between the two input series
@@ -41,11 +42,12 @@ class Model_Config:
 
     n_step_1 = 72
     n_step_2 = 72
+    n_step_3 = 24
 
     n_shift_1 = 72
     n_shift_2 = 72
 
-    h_ahead = 0
+    h_ahead = 6
     n_target = 1
 
     #train and test params
@@ -54,5 +56,5 @@ class Model_Config:
     print_step = 100
     test_step = 500
 
-    n_input_ir = 42
-    n_input_mete = 22
+    n_input_ir = 3
+    n_input_mete = 7
