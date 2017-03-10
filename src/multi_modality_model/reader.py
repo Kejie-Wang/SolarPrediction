@@ -210,6 +210,8 @@ class Reader:
             start = 0
         if length is None or start + length > self.train_num:
             length = self.train_num - start
+        if length <= 0:
+            return []
 
         train_set = []
         if self.modality[0] == 1:
@@ -234,6 +236,8 @@ class Reader:
             start = 0
         if length is None or start + length > self.validation_num:
             length = self.validation_num - start
+        if length <= 0:
+            return []
 
         validation_set = []
         if self.modality[0] == 1:
@@ -255,7 +259,9 @@ class Reader:
             start = 0
         if length is None or start + length > self.test_num:
             length = self.test_num - start
-
+        if length <=0:
+            return []
+            
         test_set = []
         if self.modality[0] == 1:
             test_set.append((self.ir_test_data[start:start+length] - self.ir_mean) / self.ir_std)
