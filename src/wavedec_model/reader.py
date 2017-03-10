@@ -83,8 +83,8 @@ class Reader:
             shift.append(config.n_shift_1)
         if self.modality[1] == 1:
             shift.append(config.n_shift_2)
-
-        max_shift = max(shift)
+        if len(shift) > 0:
+            max_shift = max(shift)
         MINUTE_TO_AVG_IN_HOUR = 60 // MINUTES_TO_AVG
 
         train_index = []; validation_index = []; test_index = []
@@ -106,17 +106,18 @@ class Reader:
             mete_train_index, mete_validation_index, mete_test_index = mete_feature_reader.get_index()
             train_index.append(mete_train_index); validation_index.append(mete_validation_index); test_index.append(mete_test_index)
 
+        if self.modality[2] == 1:
+            # construct the similar day feature reader
+            sim_day_reader = Similar_Day_Reader(similar_day_train_data_path, similar_day_validation_data_path, similar_day_test_data_path, \
+                                                time_train_data_path, time_validation_data_path, time_test_data_path, target_train_data_path)
+
         # construct the target reader
         target_reader = Target_Reader(target_train_data_path, target_validation_data_path, target_test_data_path, max_shift, h_ahead, data_step, n_target)
         target_train_index, target_validation_index, target_test_index = target_reader.get_index()
         train_index.append(target_train_index); validation_index.append(target_validation_index); test_index.append(target_test_index)
 
         # construct the time index read
-        time_reader = Target_Reader(time_train_data_path, time_validation_data_path, time_test_data_path, max_shift, h_ahead, data_step, n_target)
-
-        # construct the similar day feature reader
-        sim_day_reader = Similar_Day_Reader(similar_day_train_data_path, similar_day_validation_data_path, similar_day_test_data_path, \
-                                            time_train_data_path, time_validation_data_path, time_test_data_path)
+        time_reader = Target_Reader(time_train_data_path, time_validation_data_path, time_test_data_path, max_shift, h_ahead, data_step, n_target, dtype=np.int)
 
         # reduce the multiple modality valid index
         train_index = reduce(np.intersect1d, train_index)
@@ -130,6 +131,8 @@ class Reader:
         validation_index, self.validation_hour_index = self._get_hour_index_and_filter_data(max_shift, h_ahead, data_step, validation_index)
         test_index, self.test_hour_index = self._get_hour_index_and_filter_data(max_shift, h_ahead, data_step, test_index)
 
+        self.n_step_level = []
+
         # read the first modality data
         if self.modality[0] == 1:
             ir_train_data, ir_validation_data, ir_test_data = ir_feature_reader.get_data(train_index, validation_index, test_index)
@@ -137,9 +140,8 @@ class Reader:
             self.ir_train_data = self._wavelet_dec((ir_train_data - ir_mean) / ir_std, wavelet, level)
             self.ir_validation_data = self._wavelet_dec((ir_validation_data - ir_mean) / ir_std, wavelet, level)
             self.ir_test_data = self._wavelet_dec((ir_test_data - ir_mean) / ir_std, wavelet, level)
-            n_step_level = []
             for d in self.ir_test_data:
-                n_step_level.append(d.shape[1])
+                self.n_step_level.append(d.shape[1])
 
         # read the second modality data
         if self.modality[1] == 1:
@@ -148,19 +150,21 @@ class Reader:
             self.mete_train_data = self._wavelet_dec((mete_train_data - mete_mean) / mete_std, wavelet, level)
             self.mete_validation_data = self._wavelet_dec((mete_validation_data - mete_mean) / mete_std, wavelet, level)
             self.mete_test_data = self._wavelet_dec((mete_test_data - mete_std) / mete_std, wavelet, level)
-            n_step_level = []
-            for d in self.mete_test_data:
-                n_step_level.append(d.shape[1])
-
-        # the n_step for each wavedec level
-        self.n_step_level = n_step_level
+            if self.modality[0] == 0:
+                for d in self.mete_test_data:
+                    self.n_step_level.append(d.shape[1])
 
         # read the target data
         self.target_train_data, self.target_validation_data, self.target_test_data = target_reader.get_data(train_index, validation_index, test_index)
-        self.time_train_data, self.time_validation_data, self.time_test_data = time_reader.get_data(train_index, validation_index, test_index)
-        self.similar_day_train_data, self.similar_day_validation_data, self.similar_day_test_data = sim_day_reader.get_data(self.time_train_data, self.time_validation_data, self.time_test_data)
 
-        self.test_missing_index = target_reader.get_test_missing_index(test_index)
+        self.time_train_data, self.time_validation_data, self.time_test_data = time_reader.get_data(train_index, validation_index, test_index)
+        self.time_train_data = self.time_train_data[:,0,:]
+        self.time_validation_data = self.time_validation_data[:,0,:]
+        self.time_test_data = self.time_test_data[:,0,:]
+
+        if self.modality[2] == 1:
+            self.similar_day_train_data, self.similar_day_validation_data, self.similar_day_test_data = \
+                sim_day_reader.get_data(self.time_train_data, self.time_validation_data, self.time_test_data)
 
         #CAUTIOUS: the length of the ir_train_data and target_train_data may be differnet
         #the length of mete_test_data may be more short
@@ -185,6 +189,12 @@ class Reader:
     def get_n_step_level(self):
         return self.n_step_level
 
+    def _get_batch_data(self, data, index):
+        batch_data = []
+        for i in range(len(data)):  # for each level
+            batch_data.append(data[i][index])
+        return batch_data
+
     def next_batch(self):
         """
         @brief return a batch of train and target data
@@ -195,71 +205,95 @@ class Reader:
         index = np.random.choice(np.arange(self.train_num), self.batch_size, replace=False)
         batch = []
         if self.modality[0] == 1:
-            ir_batch_data = []
-            for l in range(len(self.ir_train_data)):
-                ir_batch_data.append(self.ir_train_data[l][index])
+            ir_batch_data = self._get_batch_data(self.ir_train_data, index)
             batch.append(ir_batch_data)
         if self.modality[1] == 1:
-            mete_batch_data = []
-            for l in range(len(self.mete_train_data)):
-                mete_batch_data.append(self.mete_train_data[l][index])
+            mete_batch_data = self._get_batch_data(self.mete_train_data, index)
             batch.append(mete_batch_data)
         if self.modality[2] == 1:
-            batch.append(mete_train_data[index])
-        hour_index_batch_data = self.train_hour_index[index]
-        batch.append(hour_index_batch_data)
-        target_batch_data = self.target_train_data[index]
-        batch.append(target_batch_data)
+            batch.append(self.similar_day_train_data[index])
+        batch.append(self.train_hour_index[index])
+        batch.append(self.target_train_data[index])
 
         return batch
 
-    def get_train_set(self):
+    def get_train_set(self, start=None, length=None):
         """
         @brief return the total dataset
         """
+        if start is None:
+            start = 0
+        if length is None or start + length > self.train_num:
+            length = self.train_num - start
+        if length <= 0:
+            return []
+
+        index = np.arange(start, start+length)
         train_set = []
         if self.modality[0] == 1:
-            train_set.append(self.ir_train_data)
+            ir_batch_data = self._get_batch_data(self.ir_train_data, index)
+            train_set.append(ir_batch_data)
         if self.modality[1] == 1:
-            train_set.append(self.mete_train_data)
+            mete_batch_data = self._get_batch_data(self.mete_train_data, index)
+            train_set.append(mete_batch_data)
         if self.modality[2] == 1:
-            train_set.append(self.similar_day_train_data)
-        train_set.append(self.train_hour_index)
-        train_set.append(self.target_train_data)
+            train_set.append(self.similar_day_train_data[index])
+        train_set.append(self.train_hour_index[index])
+        train_set.append(self.target_train_data[index])
 
         return train_set
 
     #The returned validataion and test set:
     #ir_data and mete_data: [batch_size, n_step, n_input], batch_size = validation_num/test_num
     #target_data: [batch_size, n_model], each of the target_data contains all model target in a tesor
-    def get_validation_set(self):
+    def get_validation_set(self, start=None, length=None):
         """
         @brief return the total validation dataset
         """
+        if start is None:
+            start = 0
+        if length is None or start + length > self.validation_num:
+            length = self.validation_num - start
+        if length <= 0:
+            return []
+
+        index = np.arange(start, start+length)
         validation_set = []
         if self.modality[0] == 1:
-            validation_set.append(self.ir_validation_data)
+            ir_batch_data = self._get_batch_data(self.ir_validation_data, index)
+            validation_set.append(ir_batch_data)
         if self.modality[1] == 1:
-            validation_set.append(self.mete_validation_data)
+            mete_batch_data = self._get_batch_data(self.mete_validation_data, index)
+            validation_set.append(mete_batch_data)
         if self.modality[2] == 1:
-            validation_set.append(self.similar_day_validation_data)
-        validation_set.append(self.validation_hour_index)
-        validation_set.append(self.target_validation_data)
+            validation_set.append(self.similar_day_validation_data[index])
+        validation_set.append(self.validation_hour_index[index])
+        validation_set.append(self.target_validation_data[index])
 
         return validation_set
 
-    def get_test_set(self):
+    def get_test_set(self, start=None, length=None):
         """
         @brief return a test set in the specific test num
         """
+        if start is None:
+            start = 0
+        if length is None or start + length > self.test_num:
+            length = self.test_num - start
+        if length <= 0:
+            return []
+
+        index = np.arange(start, start+length)
         test_set = []
         if self.modality[0] == 1:
-            test_set.append(self.ir_test_data)
+            ir_batch_data = self._get_batch_data(self.ir_test_data, index)
+            test_set.append(ir_batch_data)
         if self.modality[1] == 1:
-            test_set.append(self.mete_test_data)
+            mete_batch_data = self._get_batch_data(self.mete_test_data, index)
+            test_set.append(mete_batch_data)
         if self.modality[2] == 1:
-            test_set.append(self.similar_day_test_data)
-        test_set.append(self.test_hour_index)
-        test_set.append(self.target_test_data)
+            test_set.append(self.similar_day_test_data[index])
+        test_set.append(self.test_hour_index[index])
+        test_set.append(self.target_test_data[index])
 
         return test_set
