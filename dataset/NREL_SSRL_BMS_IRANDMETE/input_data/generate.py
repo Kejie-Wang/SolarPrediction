@@ -22,6 +22,14 @@ data_dir = sys.argv[1] + "/"
 ir_data = np.loadtxt(data_dir + 'ir_data.csv', delimiter=',')
 mete_data = np.loadtxt(data_dir + 'mete_data.csv', delimiter=',')
 target_data = np.loadtxt(data_dir + 'target_data.csv', delimiter=',')
+time_data = np.loadtxt(data_dir + 'time_data.csv', delimiter=',')
+sim_day_fea_data = np.loadtxt(data_dir + 'sim_day_fea_data.csv', delimiter=',')
+
+ir_index = [9, 27, 39]
+ir_data = ir_data[:, ir_index]
+
+mete_index = [2, 3, 6, 10, 14, 17, 20]
+mete_data = mete_data[:, mete_index]
 
 data_hour_length = len(ir_data)
 validation_length = validation_day_num * HOUR_IN_A_DAY
@@ -36,9 +44,17 @@ mete_train_data = mete_data[0:train_length]
 mete_validation_data = mete_data[train_length:train_length+validation_length]
 mete_test_data = mete_data[train_length+validation_length:]
 
+time_train_data = time_data[0:train_length]
+time_validation_data = time_data[train_length:train_length+validation_length]
+time_test_data = time_data[train_length+validation_length:]
+
 target_train_data = target_data[0:train_length]
 target_validation_data = target_data[train_length:train_length+validation_length]
 target_test_data = target_data[train_length+validation_length:]
+
+sim_day_fea_train_data = sim_day_fea_data[0:train_length]
+sim_day_fea_validation_data = sim_day_fea_data[train_length:train_length+validation_length]
+sim_day_fea_test_data = sim_day_fea_data[train_length+validation_length:]
 
 if not os.path.exists('./train/'):
 	os.mkdir('./train/')
@@ -56,9 +72,17 @@ np.savetxt('./train/mete_train_data.csv', mete_train_data, fmt='%.4f', delimiter
 np.savetxt('./validation/mete_validation_data.csv', mete_validation_data, fmt='%.4f', delimiter=',')
 np.savetxt('./test/mete_test_data.csv', mete_test_data, fmt='%.4f', delimiter=',')
 
+np.savetxt('./train/time_train_data.csv', time_train_data, fmt='%d', delimiter=',')
+np.savetxt('./validation/time_validation_data.csv', time_validation_data, fmt='%d', delimiter=',')
+np.savetxt('./test/time_test_data.csv', time_test_data, fmt='%d', delimiter=',')
+
 np.savetxt('./train/target_train_data.csv', target_train_data, fmt='%.4f', delimiter=',')
 np.savetxt('./validation/target_validation_data.csv', target_validation_data, fmt='%.4f', delimiter=',')
 np.savetxt('./test/target_test_data.csv', target_test_data, fmt='%.4f', delimiter=',')
+
+np.savetxt('./train/sim_day_fea_train_data.csv', sim_day_fea_train_data, fmt='%.4f', delimiter=',')
+np.savetxt('./validation/sim_day_fea_validation_data.csv', sim_day_fea_validation_data, fmt='%.4f', delimiter=',')
+np.savetxt('./test/sim_day_fea_test_data.csv', sim_day_fea_test_data, fmt='%.4f', delimiter=',')
 
 #generate a README
 with open('README', 'w') as fp:
