@@ -10,23 +10,23 @@ from similar_day_fea_reader import Similar_Day_Reader
 import cv2
 import pywt
 
-MINUTES_TO_AVG = 60
+MINUTES_TO_AVG = 15
 HOUR_IN_A_DAY = 24
 
-ir_train_data_path = "../../dataset/NREL_SSRL_BMS_IRANDMETE/input_data/train/ir_train_data.csv"
-mete_train_data_path = "../../dataset/NREL_SSRL_BMS_IRANDMETE/input_data/train/mete_train_data.csv"
-target_train_data_path = "../../dataset/NREL_SSRL_BMS_IRANDMETE/input_data/train/target_train_data.csv"
-time_train_data_path = "../../dataset/NREL_SSRL_BMS_IRANDMETE/input_data/train/time_train_data.csv"
+ir_train_data_path = "../../dataset/NREL_SSRL_BMS_IRANDMETE/wavedec_input_data/train/ir_train_data.csv"
+mete_train_data_path = "../../dataset/NREL_SSRL_BMS_IRANDMETE/wavedec_input_data/train/mete_train_data.csv"
+target_train_data_path = "../../dataset/NREL_SSRL_BMS_IRANDMETE/wavedec_input_data/train/target_train_hourly_data.csv"
+time_train_data_path = "../../dataset/NREL_SSRL_BMS_IRANDMETE/wavedec_input_data/train/time_train_data.csv"
 
-ir_validation_data_path = "../../dataset/NREL_SSRL_BMS_IRANDMETE/input_data/validation/ir_validation_data.csv"
-mete_validation_data_path = "../../dataset/NREL_SSRL_BMS_IRANDMETE/input_data/validation/mete_validation_data.csv"
-target_validation_data_path = "../../dataset/NREL_SSRL_BMS_IRANDMETE/input_data/validation/target_validation_data.csv"
-time_validation_data_path = "../../dataset/NREL_SSRL_BMS_IRANDMETE/input_data/validation/time_validation_data.csv"
+ir_validation_data_path = "../../dataset/NREL_SSRL_BMS_IRANDMETE/wavedec_input_data/validation/ir_validation_data.csv"
+mete_validation_data_path = "../../dataset/NREL_SSRL_BMS_IRANDMETE/wavedec_input_data/validation/mete_validation_data.csv"
+target_validation_data_path = "../../dataset/NREL_SSRL_BMS_IRANDMETE/wavedec_input_data/validation/target_validation_hourly_data.csv"
+time_validation_data_path = "../../dataset/NREL_SSRL_BMS_IRANDMETE/wavedec_input_data/validation/time_validation_data.csv"
 
-ir_test_data_path = "../../dataset/NREL_SSRL_BMS_IRANDMETE/input_data/test/ir_test_data.csv"
-mete_test_data_path = "../../dataset/NREL_SSRL_BMS_IRANDMETE/input_data/test/mete_test_data.csv"
-target_test_data_path = "../../dataset/NREL_SSRL_BMS_IRANDMETE/input_data/test/target_test_data.csv"
-time_test_data_path = "../../dataset/NREL_SSRL_BMS_IRANDMETE/input_data/test/time_test_data.csv"
+ir_test_data_path = "../../dataset/NREL_SSRL_BMS_IRANDMETE/wavedec_input_data/test/ir_test_data.csv"
+mete_test_data_path = "../../dataset/NREL_SSRL_BMS_IRANDMETE/wavedec_input_data/test/mete_test_data.csv"
+target_test_data_path = "../../dataset/NREL_SSRL_BMS_IRANDMETE/wavedec_input_data/test/target_test_hourly_data.csv"
+time_test_data_path = "../../dataset/NREL_SSRL_BMS_IRANDMETE/wavedec_input_data/test/time_test_data.csv"
 
 similar_day_train_data_path = '../../dataset/NREL_SSRL_BMS_IRANDMETE/input_data/train/similar_day_train_data.csv'
 similar_day_validation_data_path = '../../dataset/NREL_SSRL_BMS_IRANDMETE/input_data/validation/similar_day_validation_data.csv'
@@ -149,7 +149,7 @@ class Reader:
             mete_mean, mete_std = mete_feature_reader.get_mean_std()
             self.mete_train_data = self._wavelet_dec((mete_train_data - mete_mean) / mete_std, wavelet, level)
             self.mete_validation_data = self._wavelet_dec((mete_validation_data - mete_mean) / mete_std, wavelet, level)
-            self.mete_test_data = self._wavelet_dec((mete_test_data - mete_std) / mete_std, wavelet, level)
+            self.mete_test_data = self._wavelet_dec((mete_test_data - mete_mean) / mete_std, wavelet, level)
             if self.modality[0] == 0:
                 for d in self.mete_test_data:
                     self.n_step_level.append(d.shape[1])
