@@ -132,10 +132,10 @@ class Model:
                 ir_coeffs = self.data[0]
                 for l in range(self.level+1):
                     with tf.variable_scope('irradiance_level_' + str(l)):
-                        cell = tf.nn.rnn_cell.LSTMCell(self.n_first_hidden * (l+1), state_is_tuple=True)
+                        cell = tf.nn.rnn_cell.LSTMCell(self.n_first_hidden, state_is_tuple=True)
                         output, state = tf.nn.dynamic_rnn(cell, ir_coeffs[l], dtype=tf.float32)
                         outputs.append(self._get_last_out(output))
-                        outputs_size += self.n_first_hidden * (l+1)
+                        outputs_size += self.n_first_hidden
 
             # meteorological modality
             if self.modality[1] == 1:
