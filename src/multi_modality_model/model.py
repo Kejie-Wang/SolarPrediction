@@ -71,9 +71,13 @@ class Model:
         if self.regressor == "msvr":
             self.epsilon = config.epsilon
 
-        #quantile regression params
+        # quantile regression params
         if self.regressor == "quantile":
             self.quantile_rate = config.quantile_rate
+
+        if self.regressor == "meef":
+            self.theta = config.theta
+            self.gamma = config.gamma
 
         self._prediction = None
         self._optimize = None
@@ -265,13 +269,11 @@ class Model:
                 coeff = tf.cast(diff>0, tf.float32) - self.quantile_rate
                 self._loss = tf.reduce_sum(tf.mul(diff, coeff)) + (self.w_sum + self.b_sum) * self.C
             elif self.regressor == "meef":
-                theta = 40
-                gamma = 0.1
                 diff = self.prediction - self.target
                 ones_like_vec = tf.ones_like(diff)
                 diff_expand = tf.matmul(diff, tf.transpose(ones_like_vec))
-                self._loss =  - (1.0 - gamma) * tf.reduce_mean(self._Gaussian_Kernel(diff_expand - tf.transpose(diff_expand), 2 * theta)) - \
-                            gamma * tf.reduce_mean(self._Gaussian_Kernel(diff, theta))
+                self._loss =  - (1.0 - self.gamma) * tf.reduce_mean(self._Gaussian_Kernel(diff_expand - tf.transpose(diff_expand), 2 * self.theta)) - \
+                            self.gamma * tf.reduce_mean(self._Gaussian_Kernel(diff, self.theta))
 
         return self._loss
 
