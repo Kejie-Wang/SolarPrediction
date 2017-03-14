@@ -125,6 +125,26 @@ def rmse_and_mae(target, result):
 def coverage_rate(target, result):
     return np.mean((target<result).astype(np.float32))
 
+def Gaussian_Kernel(x, theta):
+    return np.exp((-0.5 * np.square(x / theta))) / theta / 2.0
+def get_loss(target, result, config):
+
+    if config.regressor == "mse":
+        loss = np.mean(np.square(target - result))
+    if config.regressor == "msvr":
+        diff = result - target
+        coeff = diff.astype(np.float32) - config.quantile_rate
+        loss = np.mean(diff * coeff)
+    if config.regressor == "meef":
+        diff = result - target
+        ones_like_vec = np.ones_like(diff)
+        diff_expand = diff.dot(tf.transpose(ones_like_vec))
+        loss =  - (1.0 - config.gamma) * np.mean(Gaussian_Kernel(diff_expand - np.transpose(diff_expand), 2 * config.theta)) - \
+                    config.gamma * tf.reduce_mean(Gaussian_Kernel(diff, config.theta))
+
+    return loss
+
+
 def main(_):
 
     #get the config
@@ -186,6 +206,9 @@ def main(_):
     print "save the file with", file_name
     print '\033[0m'
 
+    # validation_set = reader.get_validation_set()
+    # validation_feed = fill_feed_dict(x_ir, x_mete, x_sky_cam, hour_index, y_, keep_prob, validation_set, 1.0, modality)
+
     # save the target data, hour_index and missing index
     np.savetxt(saved_output_folder_path + "target.csv", reader.target_test_data, fmt="%.4f", delimiter=',')
     np.savetxt(saved_output_folder_path + "hour_index.csv", reader.test_hour_index, fmt="%d", delimiter=',')
@@ -221,9 +244,9 @@ def main(_):
                     rmse, mae = rmse_and_mae(reader.target_validation_data, validation_result)
                     print "Valid RMSE: ", rmse, "Valid MAE: ", mae
 
-                    # train_result = batch_test(sess, x_ir, x_mete, x_sky_cam, hour_index, y_, keep_prob, modality, model.prediction, reader.get_train_set, evaluation_batch_size)
-                    # rmse, mae = rmse_and_mae(reader.target_train_data, train_result)
-                    # print "Train RMSE: ", rmse, "Train MAE: ", mae
+                    train_result = batch_test(sess, x_ir, x_mete, x_sky_cam, hour_index, y_, keep_prob, modality, model.prediction, reader.get_train_set, evaluation_batch_size)
+                    rmse, mae = rmse_and_mae(reader.target_train_data, train_result)
+                    print "Train RMSE: ", rmse, "Train MAE: ", mae
 
                     print "sum of w:", sess.run(model.w_sum)
                     print "bias of regression:", sess.run(model.bias)
@@ -259,10 +282,10 @@ def main(_):
             if i%10 ==0:
                 if config.regressor == "mse" or config.regressor == "msvr" or config.regressor == "meef":
                     validation_result = batch_test(sess, x_ir, x_mete, x_sky_cam, hour_index, y_, keep_prob, modality, model.prediction, reader.get_validation_set, evaluation_batch_size)
-                    rmse, mae = rmse_and_mae(reader.target_validation_data, validation_result)
-
-                    if rmse < validation_min:
-                        validation_min = rmse
+                    # loss = do_eval(sess, model.loss, validation_feed)
+                    loss = get_loss(reader.target_validation_data, validation_result, config)
+                    if loss < validation_min:
+                        validation_min = loss
                         best_test_result = batch_test(sess, x_ir, x_mete, x_sky_cam, hour_index, y_, keep_prob, modality, model.prediction, reader.get_test_set, evaluation_batch_size)
                         np.savetxt(saved_output_folder_path + "result.csv", best_test_result, fmt="%.4f", delimiter=',')
                         if i>1500:
