@@ -8,11 +8,15 @@ class Model_Config:
     regressor = "mse"
 
     # msvr params
-    epsilon = 10
+    epsilon = 60
     C  = 0.0
 
     # quantile regression params
     quantile_rate = 0.3
+
+    # meef loss function params
+    theta = 20
+    gamma = 0.1
 
     # network params
     # the hidden size for three modalities, second level lstm and fully connected network
@@ -23,7 +27,7 @@ class Model_Config:
     n_hidden_level2 = 400
 
     # learning rate
-    lr = 0.001
+    lr = 0.0001
 
     #modal configuration
     modality = [1, 1, 1]
@@ -33,7 +37,7 @@ class Model_Config:
     # n_step: the length of the input time series
     # h_head: the lag between the input and output time series
     # n_target: the lenght of the output length if not equal one, use the msvr
-    batch_size = 100
+    batch_size = 50
     data_step = 1
 
     n_step_1 = 24
@@ -50,9 +54,9 @@ class Model_Config:
     #train and test params
     epoch_size = 15000
 
-    print_step = 50
-    test_step = 1000
-    evaluation_batch_size = 100
+    print_step = 100
+    test_step = 5000
+    evaluation_batch_size = 50
 
     n_input_ir = 3
     n_input_mete = 7
